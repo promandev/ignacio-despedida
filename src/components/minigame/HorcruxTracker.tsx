@@ -31,18 +31,15 @@ function HorcruxModal({ horcrux, secondsGained, onClose }: HorcruxModalProps) {
           exit={{ scale: 0.7, opacity: 0, y: 40 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
-          <motion.div
-            className="text-7xl mb-4"
-            animate={{ rotate: [0, -8, 8, -8, 0], scale: [1, 1.2, 1] }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            {horcrux.emoji}
-          </motion.div>
-          <img
-            src={horcrux.badgeImage}
-            alt={horcrux.name}
-            className="w-20 h-20 object-contain mx-auto mb-4 badge-unlocked"
-          />
+          <div className="relative inline-block mb-4">
+            <motion.img
+              src={horcrux.badgeImage}
+              alt={horcrux.name}
+              className="w-36 h-36 object-contain mx-auto badge-unlocked"
+              animate={{ scale: [0.8, 1] }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            />
+          </div>
           <h3 className="font-cinzel text-xl font-bold text-gold mb-2">
             ✨ ¡Horrocrux recuperado!
           </h3>

@@ -73,21 +73,21 @@ function ClinClinesChart() {
 
   return (
     <div ref={ref} className="w-full">
-      <div className="flex items-end justify-around gap-3 h-52 mb-4">
+      <div className="flex items-end justify-around gap-2 sm:gap-3 h-44 sm:h-52 mb-4">
         {clinClineData.map((d, i) => (
-          <div key={d.label} className="flex flex-col items-center flex-1 h-full justify-end gap-2">
+          <div key={d.label} className="flex flex-col items-center flex-1 h-full justify-end gap-1 sm:gap-2 min-w-0">
             <motion.span
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ delay: 0.3 + i * 0.15 }}
-              className="text-white font-bold text-lg"
+              className="text-white font-bold text-sm sm:text-lg"
             >
               {inView ? d.value : ''}
             </motion.span>
-            <div className="w-full flex items-end justify-center" style={{ height: '180px' }}>
+            <div className="w-full flex items-end justify-center flex-1">
               <motion.div
                 initial={{ height: 0 }}
-                animate={inView ? { height: `${(d.value / maxClinCline) * 170}px` } : {}}
+                animate={inView ? { height: `${(d.value / maxClinCline) * 100}%` } : {}}
                 transition={{
                   duration: 0.9,
                   delay: 0.2 + i * 0.15,
@@ -96,7 +96,7 @@ function ClinClinesChart() {
                 style={{ backgroundColor: d.color, borderRadius: '8px 8px 0 0', width: '100%' }}
               />
             </div>
-            <span className="text-sky-200 text-xs text-center leading-tight mt-1">{d.label}</span>
+            <span className="text-sky-200 text-[10px] sm:text-xs text-center leading-tight mt-1">{d.label}</span>
           </div>
         ))}
       </div>
@@ -415,7 +415,7 @@ export default function MarineroTheme() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="bg-sky-950/70 border border-sky-700/30 rounded-2xl p-6 backdrop-blur-sm mb-10"
+            className="bg-sky-950/70 border border-sky-700/30 rounded-2xl p-4 sm:p-6 backdrop-blur-sm mb-10 overflow-hidden"
           >
             <ClinClinesChart />
           </motion.div>
