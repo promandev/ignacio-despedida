@@ -18,6 +18,7 @@ const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
 function MainPage() {
   const { state, resetTransitionTriggered } = useGameState();
   const { isAdmin } = useAuth();
+  const [dosSessionIsAdmin, setDosSessionIsAdmin] = useState(false);
 
   // Non-admin with forcedUserTheme set: skip all transition logic
   const isForcedTheme = !isAdmin && state.forcedUserTheme != null;
@@ -109,15 +110,21 @@ function MainPage() {
     resetTransitionTriggered();
   }, [resetTransitionTriggered]);
 
+  useEffect(() => {
+    if (!state.showDosChat) {
+      setDosSessionIsAdmin(false);
+    }
+  }, [state.showDosChat]);
+
   return (
     <>
       {/* Header: always visible for admin, hidden when DOS chat active for non-admin */}
-      {(!state.showDosChat || isAdmin) && <Header />}
+      {(!state.showDosChat || dosSessionIsAdmin) && <Header />}
 
       {/* DOS Console overlay */}
       {state.showDosChat && (
-        <div className={isAdmin ? 'dos-console-with-header' : ''}>
-          <DosConsole isAdminUser={isAdmin} />
+        <div className={dosSessionIsAdmin ? 'dos-console-with-header' : ''}>
+          <DosConsole onSessionRoleChange={setDosSessionIsAdmin} />
         </div>
       )}
 

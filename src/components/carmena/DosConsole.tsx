@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { subscribeToChatMessages, sendChatMessage } from '../../firebase/config';
+import { setAdminAuthSession } from '../../hooks/useAuth';
 import type { ChatMessage } from '../../types';
 
 const ADMIN_USER = (import.meta.env.VITE_ADMIN_USER ?? 'admin').toLowerCase();
 const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS ?? '';
 
 type AuthStep = 'boot' | 'username' | 'password' | 'authenticated';
+
+function formatChatTime(timestamp: number): string {
+  if (!Number.isFinite(timestamp)) return '--:--';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '--:--';
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
 
 interface ConsoleLine {
   text: string;
@@ -36,19 +44,17 @@ function compressImage(file: File, maxWidth = 800, quality = 0.6): Promise<strin
   });
 }
 
-export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
+export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChange: (isAdmin: boolean) => void }) {
   const [authStep, setAuthStep] = useState<AuthStep>('boot');
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [input, setInput] = useState('');
   const [username, setUsername] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [inputUsername, setInputUsername] = useState('');
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const bootDone = useRef(false);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -68,9 +74,6 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
 
   // Boot sequence
   useEffect(() => {
-    if (bootDone.current) return;
-    bootDone.current = true;
-
     const bootLines: ConsoleLine[] = [
       { text: '', type: 'system' },
       { text: 'Microsoft(R) MS-DOS(R) Version 6.22', type: 'system' },
@@ -91,7 +94,10 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
     let i = 0;
     const timer = setInterval(() => {
       if (i < bootLines.length) {
-        setLines((prev) => [...prev, bootLines[i]]);
+        const nextLine = bootLines[i];
+        if (nextLine) {
+          setLines((prev) => [...prev, nextLine]);
+        }
         i++;
       } else {
         clearInterval(timer);
@@ -105,6 +111,25 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Safety watchdog: if boot never paints (HMR/edge cases), show prompt anyway.
+  useEffect(() => {
+    if (authStep !== 'boot') return;
+    const watchdog = setTimeout(() => {
+      setLines((prev) => {
+        if (prev.length > 0) return prev;
+        return [
+          { text: 'Microsoft(R) MS-DOS(R) Version 6.22', type: 'system' },
+          { text: 'C:\\>chat.exe', type: 'system' },
+          { text: '', type: 'system' },
+          { text: 'Introduce tu nombre (primera letra en mayusculas):', type: 'system' },
+        ];
+      });
+      setAuthStep('username');
+    }, 2500);
+
+    return () => clearTimeout(watchdog);
+  }, [authStep]);
 
   // Subscribe to chat messages when authenticated
   useEffect(() => {
@@ -131,7 +156,6 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
 
         // Check admin user (case-insensitive)
         if (value.toLowerCase() === ADMIN_USER) {
-          setInputUsername(value);
           setIsAdmin(true);
           addLine({ text: '', type: 'system' });
           addLine({
@@ -144,7 +168,6 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
 
         // Check non-admin user (exact match)
         if (value === 'Ignacio') {
-          setInputUsername(value);
           setIsAdmin(false);
           addLine({ text: '', type: 'system' });
           addLine({
@@ -165,14 +188,16 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
       }
 
       if (authStep === 'password') {
-        // Show asterisks for visual feedback
-        addLine({ text: `> ${'*'.repeat(value.length)}`, type: 'input' });
+        // Mask password only when admin username was provided.
+        addLine({ text: `> ${isAdmin ? '*'.repeat(value.length) : value}`, type: 'input' });
         setInput('');
 
         const isValidAdmin = isAdmin && value === ADMIN_PASS;
         const isValidUser = !isAdmin && value === '27/07/1991';
 
         if (isValidAdmin || isValidUser) {
+          onSessionRoleChange(isValidAdmin);
+          setAdminAuthSession(isValidAdmin);
           const displayName = isAdmin ? 'Usuario Desconocido' : 'Ignacio';
           setUsername(displayName);
           addLine({ text: '', type: 'system' });
@@ -203,7 +228,7 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
         });
       }
     },
-    [input, authStep, isAdmin, username, addLine, inputUsername]
+    [input, authStep, isAdmin, username, addLine, onSessionRoleChange]
   );
 
   const handleImageUpload = useCallback(
@@ -241,7 +266,7 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
 
       <div ref={terminalRef} className="dos-terminal">
         {/* Boot / auth lines */}
-        {lines.map((line, i) => (
+        {lines.filter(Boolean).map((line, i) => (
           <div key={i} className={`dos-line ${line.type === 'error' ? 'dos-error' : ''} ${line.type === 'input' ? 'dos-input-line' : ''}`}>
             {line.text || '\u00A0'}
           </div>
@@ -250,9 +275,9 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
         {/* Chat messages (only after auth) */}
         {authStep === 'authenticated' &&
           chatMessages.map((msg) => (
-            <div key={msg.id} className="dos-chat-msg">
+            <div key={msg.id || `${msg.username}-${msg.timestamp}`} className="dos-chat-msg">
               <span className="dos-chat-user">
-                [{new Date(msg.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}] {msg.username}:
+                [{formatChatTime(msg.timestamp)}] {msg.username || 'Usuario'}:
               </span>{' '}
               {msg.image ? (
                 <div className="dos-chat-image-wrap">
@@ -276,7 +301,7 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
             <form onSubmit={handleSubmit} className="dos-form">
               <input
                 ref={inputRef}
-                type={isPasswordStep ? 'password' : 'text'}
+                type={isPasswordStep && isAdmin ? 'password' : 'text'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="dos-input"
@@ -289,7 +314,7 @@ export default function DosConsole({ isAdminUser }: { isAdminUser: boolean }) {
               <span className="dos-cursor">█</span>
             </form>
             {/* Photo button for non-admin authenticated users */}
-            {authStep === 'authenticated' && !isAdminUser && (
+            {authStep === 'authenticated' && !isAdmin && (
               <>
                 <button
                   type="button"

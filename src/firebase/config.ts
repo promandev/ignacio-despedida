@@ -77,10 +77,20 @@ export function subscribeToChatMessages(
         callback([]);
         return;
       }
-      const msgs: ChatMessage[] = Object.entries(val).map(([key, v]) => ({
-        ...(v as Omit<ChatMessage, 'id'>),
-        id: key,
-      }));
+      const msgs = Object.entries(val).reduce<ChatMessage[]>((acc, [key, v]) => {
+        if (!v || typeof v !== 'object') return acc;
+        const raw = v as Partial<ChatMessage>;
+        acc.push({
+          id: key,
+          username: typeof raw.username === 'string' && raw.username.trim() ? raw.username : 'Usuario',
+          text: typeof raw.text === 'string' ? raw.text : '',
+          image: typeof raw.image === 'string' ? raw.image : undefined,
+          timestamp: typeof raw.timestamp === 'number' && Number.isFinite(raw.timestamp)
+            ? raw.timestamp
+            : Date.now(),
+        });
+        return acc;
+      }, []);
       msgs.sort((a, b) => a.timestamp - b.timestamp);
       callback(msgs);
     });
@@ -90,12 +100,27 @@ export function subscribeToChatMessages(
   const KEY = 'dosChatMessages';
   const load = () => {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      return Array.isArray(parsed) ? (parsed as ChatMessage[]) : [];
+    } catch {
+      return [];
+    }
   };
   callback(load());
   const handler = (e: StorageEvent) => {
-    if (e.key === KEY && e.newValue) {
-      callback(JSON.parse(e.newValue) as ChatMessage[]);
+    if (e.key === KEY) {
+      if (!e.newValue) {
+        callback([]);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(e.newValue) as unknown;
+        callback(Array.isArray(parsed) ? (parsed as ChatMessage[]) : []);
+      } catch {
+        callback([]);
+      }
     }
   };
   window.addEventListener('storage', handler);
@@ -109,7 +134,13 @@ export function sendChatMessage(msg: Omit<ChatMessage, 'id'>): void {
   } else {
     const KEY = 'dosChatMessages';
     const raw = localStorage.getItem(KEY);
-    const msgs: ChatMessage[] = raw ? JSON.parse(raw) : [];
+    let msgs: ChatMessage[] = [];
+    try {
+      msgs = raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+      if (!Array.isArray(msgs)) msgs = [];
+    } catch {
+      msgs = [];
+    }
     msgs.push({ ...msg, id: Date.now().toString() });
     localStorage.setItem(KEY, JSON.stringify(msgs));
   }

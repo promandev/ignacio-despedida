@@ -9,7 +9,7 @@ const buildInitialRoscoStatuses = (): Record<string, RoscoLetterStatus> => {
   return s;
 };
 
-export const INITIAL_STATE: GameState = {
+const INITIAL_STATE: GameState = {
   currentTheme: 'carmena',
   transitionTriggered: false,
   showTransitionModal: true,
@@ -42,6 +42,23 @@ export const INITIAL_STATE: GameState = {
   },
 };
 
+function hydrateGameState(raw: Partial<GameState> | null | undefined): GameState {
+  if (!raw || typeof raw !== 'object') return INITIAL_STATE;
+
+  return {
+    ...INITIAL_STATE,
+    ...raw,
+    horcruxes: { ...INITIAL_STATE.horcruxes, ...(raw.horcruxes || {}) },
+    rosco: {
+      ...INITIAL_STATE.rosco,
+      ...(raw.rosco || {}),
+      statuses: { ...INITIAL_STATE.rosco.statuses, ...(raw.rosco?.statuses || {}) },
+      revealedHints: raw.rosco?.revealedHints || {},
+    },
+    counters: { ...INITIAL_STATE.counters, ...(raw.counters || {}) },
+  };
+}
+
 type CounterKey = 'copas' | 'aguasConGas' | 'discursosMadridCentral' | 'frotaManos';
 
 interface GameStateContextType {
@@ -73,10 +90,37 @@ interface GameStateContextType {
 
 const GameStateContext = createContext<GameStateContextType | null>(null);
 
+const FALLBACK_CONTEXT: GameStateContextType = {
+  state: INITIAL_STATE,
+  setTheme: () => {},
+  triggerTransition: () => {},
+  setThemeWithModal: () => {},
+  setShowTransitionModal: () => {},
+  toggleHorcrux: () => {},
+  setHorcrux: () => {},
+  updateRoscoStatus: () => {},
+  setCurrentLetter: () => {},
+  revealHint: () => {},
+  useHintForLetter: () => null,
+  toggleRoscoPause: () => {},
+  setRoscoComplete: () => {},
+  addBonusHint: () => {},
+  resetRoscoLetter: () => {},
+  resetRosco: () => {},
+  incrementCounter: () => {},
+  decrementCounter: () => {},
+  setCounter: () => {},
+  batchUpdate: () => {},
+  resetTransitionTriggered: () => {},
+  setForcedUserTheme: () => {},
+  setShowDosChat: () => {},
+  isFirebase: isFirebaseConfigured,
+};
+
 export function GameStateProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>(() => {
     const cached = loadCachedState();
-    return cached || INITIAL_STATE;
+    return hydrateGameState(cached || null);
   });
 
   const stateRef = useRef(state);
@@ -87,27 +131,18 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     if (isFirebaseConfigured) {
       const unsub = subscribeToState((firebaseState) => {
         if (firebaseState) {
-          // Merge with defaults to handle missing fields
-          const merged = {
-            ...INITIAL_STATE,
-            ...firebaseState,
-            horcruxes: { ...INITIAL_STATE.horcruxes, ...firebaseState.horcruxes },
-            rosco: {
-              ...INITIAL_STATE.rosco,
-              ...firebaseState.rosco,
-              statuses: { ...INITIAL_STATE.rosco.statuses, ...(firebaseState.rosco?.statuses || {}) },
-              revealedHints: firebaseState.rosco?.revealedHints || {},
-            },
-            counters: { ...INITIAL_STATE.counters, ...(firebaseState.counters || {}) },
-          };
-          setState(merged);
+          setState(hydrateGameState(firebaseState));
         }
       });
       return unsub;
     } else {
       const handler = (e: StorageEvent) => {
         if (e.key === 'gameState' && e.newValue) {
-          setState(JSON.parse(e.newValue));
+          try {
+            setState(hydrateGameState(JSON.parse(e.newValue) as Partial<GameState>));
+          } catch {
+            setState(INITIAL_STATE);
+          }
         }
       };
       window.addEventListener('storage', handler);
@@ -317,6 +352,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
 export function useGameState() {
   const ctx = useContext(GameStateContext);
-  if (!ctx) throw new Error('useGameState must be used within GameStateProvider');
+  if (!ctx) {
+    // In dev hot-reload edge cases, avoid blank-screen crashes and keep UI usable.
+    console.error('useGameState called without provider; using safe fallback context.');
+    return FALLBACK_CONTEXT;
+  }
   return ctx;
 }
