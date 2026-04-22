@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Source/working images (keep locally, not in repo)
+source-images/
