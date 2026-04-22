@@ -284,12 +284,14 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
 
   const isPasswordStep = authStep === 'password';
 
-  // Auto-format date input for Ignacio (DD/MM/YYYY)
-  const formatDateInput = (value: string): string => {
+  // Auto-format date input DD/MM/YYYY — appends '/' immediately after 2nd and 4th digit
+  const formatDateInput = (value: string, isDeleting: boolean): string => {
     const digits = value.replace(/\D/g, '');
     if (digits.length === 0) return '';
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    if (digits.length < 2) return digits;
+    if (digits.length === 2) return isDeleting ? digits : `${digits}/`;
+    if (digits.length < 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    if (digits.length === 4) return isDeleting ? `${digits.slice(0, 2)}/${digits.slice(2)}` : `${digits.slice(0, 2)}/${digits.slice(2)}/`;
     return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
   };
 
@@ -342,12 +344,12 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
                 type={isPasswordStep && isAdmin ? 'password' : 'text'}
                 value={input}
                 onChange={(e) => {
-                  let newValue = e.target.value;
-                  // Auto-format date for Ignacio password step
                   if (isPasswordStep && !isAdmin) {
-                    newValue = formatDateInput(newValue);
+                    const isDeleting = e.target.value.length < input.length;
+                    setInput(formatDateInput(e.target.value, isDeleting));
+                  } else {
+                    setInput(e.target.value);
                   }
-                  setInput(newValue);
                 }}
                 className="dos-input"
                 style={{ width: `${input.length}ch` }}

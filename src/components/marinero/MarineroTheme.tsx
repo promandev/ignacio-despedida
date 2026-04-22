@@ -286,7 +286,7 @@ export default function MarineroTheme() {
                 <p className="text-gray-300 text-sm leading-relaxed">
                   Bajo el nuevo nombre <strong className="text-yellow-300">Moeve</strong>, la compañía
                   navega hacia un horizonte de energías limpias: combustibles marinos sostenibles,
-                  biocombustibles y energía renovable offshore. Y Ignacio, fiel a su estilo,
+                  biocombustibles y energía renovable offshore. E Ignacio, fiel a su estilo,
                   está ahí para asegurarse de que cada contrato lleve la firma correcta y que
                   los mares queden un poco más limpios que como los encontró.
                 </p>

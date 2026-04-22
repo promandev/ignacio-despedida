@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER ?? 'admin';
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS ?? '';
+const ADMIN_USER = import.meta.env.VITE_AUTH_USER_1 ?? 'admin';
+const ADMIN_PASS = import.meta.env.VITE_AUTH_CRED_1 ?? '';
 const AUTH_KEY = 'despedida_admin_auth';
 const AUTH_CHANGED_EVENT = 'despedida_admin_auth_changed';
 
