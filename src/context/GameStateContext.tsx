@@ -14,6 +14,7 @@ export const INITIAL_STATE: GameState = {
   transitionTriggered: false,
   showTransitionModal: true,
   forcedUserTheme: null,
+  showDosChat: false,
   counters: {
     copas: 0,
     aguasConGas: 0,
@@ -66,6 +67,7 @@ interface GameStateContextType {
   batchUpdate: (patch: Partial<GameState>) => void;
   resetTransitionTriggered: () => void;
   setForcedUserTheme: (theme: ThemeName | null) => void;
+  setShowDosChat: (show: boolean) => void;
   isFirebase: boolean;
 }
 
@@ -275,6 +277,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     update((s) => ({ ...s, forcedUserTheme: theme }));
   }, [update]);
 
+  const setShowDosChat = useCallback((show: boolean) => {
+    update((s) => ({ ...s, showDosChat: show }));
+  }, [update]);
+
   return (
     <GameStateContext.Provider
       value={{
@@ -300,6 +306,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         batchUpdate,
         resetTransitionTriggered,
         setForcedUserTheme,
+        setShowDosChat,
         isFirebase: isFirebaseConfigured,
       }}
     >

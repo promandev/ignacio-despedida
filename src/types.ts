@@ -32,11 +32,20 @@ export interface CountersState {
   frotaManos: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  username: string;
+  text: string;
+  image?: string;
+  timestamp: number;
+}
+
 export interface GameState {
   currentTheme: ThemeName;
   transitionTriggered: boolean;
   showTransitionModal: boolean;
   forcedUserTheme: ThemeName | null;
+  showDosChat: boolean;
   horcruxes: HorcruxState;
   rosco: RoscoState;
   counters: CountersState;

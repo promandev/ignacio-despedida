@@ -8,6 +8,7 @@ import Header from './components/layout/Header';
 import TransitionModal from './components/layout/TransitionModal';
 import ThemeTransition from './components/layout/ThemeTransition';
 import CarmenaTheme from './components/carmena/CarmenaTheme';
+import DosConsole from './components/carmena/DosConsole';
 import SlytherinTheme from './components/slytherin/SlytherinTheme';
 import AdminPanel from './components/admin/AdminPanel';
 
@@ -110,24 +111,37 @@ function MainPage() {
 
   return (
     <>
-      <Header />
-      {/* TransitionModal: for admin preview OR non-admin time-based trigger */}
-      {!isForcedTheme && (
-        <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
+      {/* Header: always visible for admin, hidden when DOS chat active for non-admin */}
+      {(!state.showDosChat || isAdmin) && <Header />}
+
+      {/* DOS Console overlay */}
+      {state.showDosChat && (
+        <div className={isAdmin ? 'dos-console-with-header' : ''}>
+          <DosConsole isAdminUser={isAdmin} />
+        </div>
       )}
-      <ThemeTransition
-        isTransforming={isTransitioning}
-        onComplete={handleTransitionComplete}
-      />
-      <main className="pt-0">
-        <AnimatePresence mode="wait">
-          {displayTheme === 'carmena' ? (
-            <CarmenaTheme key="carmena" />
-          ) : (
-            <SlytherinTheme key="slytherin" />
+
+      {/* Normal theme content (hidden when DOS console active) */}
+      {!state.showDosChat && (
+        <>
+          {!isForcedTheme && (
+            <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
           )}
-        </AnimatePresence>
-      </main>
+          <ThemeTransition
+            isTransforming={isTransitioning}
+            onComplete={handleTransitionComplete}
+          />
+          <main className="pt-0">
+            <AnimatePresence mode="wait">
+              {displayTheme === 'carmena' ? (
+                <CarmenaTheme key="carmena" />
+              ) : (
+                <SlytherinTheme key="slytherin" />
+              )}
+            </AnimatePresence>
+          </main>
+        </>
+      )}
     </>
   );
 }

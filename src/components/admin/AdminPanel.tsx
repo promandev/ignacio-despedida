@@ -20,6 +20,7 @@ export default function AdminPanel() {
     setCounter,
     setShowTransitionModal,
     setForcedUserTheme,
+    setShowDosChat,
     isFirebase,
   } = useGameState();
 
@@ -294,6 +295,42 @@ export default function AdminPanel() {
           {state.forcedUserTheme != null && (
             <p className="mt-3 text-xs text-amber-400/80 bg-amber-900/20 rounded-lg p-2">
               ⚠️ Temática forzada a <strong>{state.forcedUserTheme === 'carmena' ? 'Manuela Carmena' : 'Slytherin'}</strong>. Los usuarios no-admin verán esta temática independientemente de la hora.
+            </p>
+          )}
+        </Section>
+
+        {/* DOS Console Chat control */}
+        <Section
+          title="💻 Consola DOS (Chat previo a Carmena)"
+          subtitle="Activa o desactiva la vista de consola MS-DOS con chat. Cubre toda la pantalla para el usuario no-admin"
+        >
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowDosChat(!state.showDosChat)}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                state.showDosChat ? 'bg-emerald-600' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition-transform ${
+                  state.showDosChat ? 'translate-x-7' : ''
+                }`}
+              />
+            </button>
+            <div>
+              <p className="text-sm text-gray-300">
+                {state.showDosChat ? '🟢 Consola DOS activa' : '⚪ Consola DOS desactivada'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {state.showDosChat
+                  ? 'Los usuarios ven la consola DOS en lugar de la temática de Carmena'
+                  : 'Los usuarios ven la web normal'}
+              </p>
+            </div>
+          </div>
+          {state.showDosChat && (
+            <p className="mt-3 text-xs text-green-400/80 bg-green-900/20 rounded-lg p-2">
+              💻 La consola DOS está activa. Al volver a la web verás la consola como admin (con header). Los no-admin la ven a pantalla completa.
             </p>
           )}
         </Section>

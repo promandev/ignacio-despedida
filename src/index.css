@@ -89,11 +89,12 @@ body {
 /* ===== ROSCO ===== */
 .rosco-letter {
   transition: all 0.3s ease;
-  cursor: pointer;
+  cursor: default;
   user-select: none;
+  pointer-events: none;
 }
 .rosco-letter:hover {
-  transform: scale(1.15);
+  transform: none;
 }
 
 /* ===== GLASS EFFECT ===== */
@@ -161,4 +162,195 @@ body {
   .text-shadow-lg {
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
+}
+
+/* ===== DOS CONSOLE ===== */
+@font-face {
+  font-family: 'DOSFont';
+  src: local('Courier New'), local('Consolas'), local('monospace');
+}
+
+.dos-console {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000000;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #33ff33;
+  cursor: text;
+  overflow: hidden;
+}
+
+.dos-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+}
+
+.dos-flicker {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  animation: dos-flicker-anim 0.15s infinite;
+  opacity: 0;
+}
+
+@keyframes dos-flicker-anim {
+  0% { opacity: 0; }
+  5% { opacity: 0.02; }
+  10% { opacity: 0; }
+  15% { opacity: 0.03; }
+  20% { opacity: 0; }
+}
+
+.dos-terminal {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 5;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dos-terminal::-webkit-scrollbar {
+  width: 4px;
+}
+.dos-terminal::-webkit-scrollbar-track {
+  background: #000;
+}
+.dos-terminal::-webkit-scrollbar-thumb {
+  background: #33ff33;
+  border-radius: 2px;
+}
+
+.dos-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+.dos-error {
+  color: #ff3333;
+  text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+}
+
+.dos-input-line {
+  color: #88ff88;
+}
+
+.dos-chat-msg {
+  margin: 2px 0;
+  word-break: break-word;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+.dos-chat-user {
+  color: #ffcc00;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);
+}
+
+.dos-chat-text {
+  color: #33ff33;
+}
+
+.dos-chat-image-wrap {
+  display: inline-block;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.dos-chat-image {
+  max-width: 300px;
+  max-height: 250px;
+  border: 1px solid #33ff33;
+  display: block;
+  image-rendering: auto;
+  filter: brightness(0.85) contrast(1.1);
+}
+
+.dos-input-row {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+  min-height: 20px;
+}
+
+.dos-prompt {
+  color: #33ff33;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+.dos-form {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.dos-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #33ff33;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  caret-color: transparent;
+  flex: 1;
+  min-width: 0;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+.dos-input[type="password"] {
+  -webkit-text-security: disc;
+}
+
+.dos-cursor {
+  color: #33ff33;
+  animation: dos-blink 1s step-end infinite;
+  text-shadow: 0 0 8px rgba(51, 255, 51, 0.8);
+  flex-shrink: 0;
+}
+
+@keyframes dos-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.dos-photo-btn {
+  color: #33ff33;
+  background: transparent;
+  border: 1px solid #33ff33;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  cursor: pointer;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.dos-photo-btn:hover {
+  background: rgba(51, 255, 51, 0.15);
+}
+
+/* With header offset for admin */
+.dos-console-with-header .dos-console {
+  top: 52px;
 }
