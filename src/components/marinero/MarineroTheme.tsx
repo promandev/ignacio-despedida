@@ -291,6 +291,45 @@ export default function MarineroTheme() {
                   los mares queden un poco más limpios que como los encontró.
                 </p>
               </motion.div>
+
+              <motion.div
+                {...fadeUp}
+                className="bg-sky-900/40 border border-sky-700/30 rounded-2xl p-6 backdrop-blur-sm"
+              >
+                <h3 className="text-sky-300 font-bold text-lg mb-2">🎵 El Himno en Alta Mar</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  Dicen que cuando navegaba, había veces que se ponía a cantar el himno del
+                  <strong className="text-red-400"> Athletic Club de Bilbao</strong> a pleno pulmón,
+                  con las olas como público y las gaviotas como coro. La tripulación
+                  aprendió rápido a reconocer las primeras notas:
+                </p>
+                <blockquote className="mt-3 border-l-2 border-red-500/60 pl-4 py-2 bg-red-950/20 rounded-r-lg">
+                  <p className="text-red-300 italic text-sm leading-relaxed font-medium">
+                    «Athletic, Athletic eup!<br />
+                    Zuri-gorri, zuri-gorri eup!<br />
+                    Aupa mutillak, eutsi gogor,<br />
+                    ekin gogotsu danok batera!»
+                  </p>
+                </blockquote>
+                <p className="text-gray-400 text-xs mt-2">
+                  Y así, entre proa y popa, el himno rojiblanco retumbaba mar adentro.
+                </p>
+              </motion.div>
+
+              <motion.div
+                {...fadeUp}
+                className="bg-sky-900/40 border border-sky-700/30 rounded-2xl p-6 backdrop-blur-sm"
+              >
+                <h3 className="text-sky-300 font-bold text-lg mb-2">🚢 El <em className="text-yellow-300">Bilbao</em></h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  De tanto cantar el himno y suspirar mirando al norte, Ignacio acabó
+                  enamorándose de la ciudad. Tanto le gustó Bilbao que hizo lo que cualquier
+                  marinero de ley haría: nombrar a un barco en su honor.
+                  Desde entonces, el <strong className="text-yellow-300">«Bilbao»</strong> surca
+                  las aguas llevando el nombre de la villa que conquistó el corazón de este
+                  marinero reconvertido. Si lo ves pasar, ya sabes quién está detrás.
+                </p>
+              </motion.div>
             </div>
           </div>
         </div>

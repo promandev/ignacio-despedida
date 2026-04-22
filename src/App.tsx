@@ -7,6 +7,8 @@ import { useAuth } from './hooks/useAuth';
 import Header from './components/layout/Header';
 import TransitionModal from './components/layout/TransitionModal';
 import ThemeTransition from './components/layout/ThemeTransition';
+import MarineroTransitionModal from './components/layout/MarineroTransitionModal';
+import MarineroThemeTransition from './components/layout/MarineroThemeTransition';
 import CarmenaTheme from './components/carmena/CarmenaTheme';
 import DosConsole from './components/carmena/DosConsole';
 import SlytherinTheme from './components/slytherin/SlytherinTheme';
@@ -28,11 +30,16 @@ function MainPage() {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [awaitingModal, setAwaitingModal] = useState(false);
+  const [isMarineroTransitioning, setIsMarineroTransitioning] = useState(false);
+  const [awaitingMarineroModal, setAwaitingMarineroModal] = useState(false);
 
   const [displayTheme, setDisplayTheme] = useState<ThemeName>(() => {
-    // Admin previewing transition: start at carmena if wanting to see the full transition
+    // Admin previewing transition: start at previous theme if wanting to see the full transition
     if (isAdmin && state.currentTheme === 'slytherin' && state.showTransitionModal) {
       return 'carmena';
+    }
+    if (isAdmin && state.currentTheme === 'marinero' && state.showMarineroModal) {
+      return 'slytherin';
     }
     // Admin normal: use current theme
     if (isAdmin) return state.currentTheme;
@@ -57,12 +64,15 @@ function MainPage() {
   }, [displayTheme]);
 
   // Admin: sync displayTheme with currentTheme from shared state
-  // NOTE: Don't sync during transition preview (when showTransitionModal is true)
+  // NOTE: Don't sync during transition preview
   useEffect(() => {
-    if (isAdmin && !(state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena')) {
+    if (!isAdmin) return;
+    const isSlytherinPreview = state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena';
+    const isMarineroPreview = state.currentTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin';
+    if (!isSlytherinPreview && !isMarineroPreview) {
       setDisplayTheme(state.currentTheme);
     }
-  }, [isAdmin, state.currentTheme, state.showTransitionModal, displayTheme]);
+  }, [isAdmin, state.currentTheme, state.showTransitionModal, state.showMarineroModal, displayTheme]);
 
   // Non-admin with forced theme: sync displayTheme when forcedUserTheme changes
   useEffect(() => {
@@ -85,13 +95,21 @@ function MainPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, state.forcedUserTheme]);
 
-  // Admin preview transition
+  // Admin preview transition (Carmena → Slytherin)
   useEffect(() => {
     if (!isAdmin) return;
     if (state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
       setAwaitingModal(true);
     }
   }, [isAdmin, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal]);
+
+  // Admin preview transition (Slytherin → Marinero)
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (state.currentTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin' && !isMarineroTransitioning && !awaitingMarineroModal) {
+      setAwaitingMarineroModal(true);
+    }
+  }, [isAdmin, state.currentTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal]);
 
   // Non-admin time-based transition trigger (only when no forced theme)
   useEffect(() => {
@@ -105,14 +123,17 @@ function MainPage() {
     }
   }, [state.transitionTriggered, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme]);
 
-  // Non-admin marinero trigger: direct switch, no modal/animation
+  // Non-admin marinero trigger: with modal/animation support
   useEffect(() => {
     if (isAdmin || isForcedTheme) return;
-    if (state.transitionTriggered && state.currentTheme === 'marinero' && displayTheme !== 'marinero' && !isTransitioning && !awaitingModal) {
-      setDisplayTheme('marinero');
-      resetTransitionTriggered();
+    if (state.transitionTriggered && state.currentTheme === 'marinero' && displayTheme === 'slytherin' && !isMarineroTransitioning && !awaitingMarineroModal) {
+      if (state.showMarineroModal) {
+        setAwaitingMarineroModal(true);
+      } else {
+        setIsMarineroTransitioning(true);
+      }
     }
-  }, [state.transitionTriggered, state.currentTheme, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme, resetTransitionTriggered]);
+  }, [state.transitionTriggered, state.currentTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal, isAdmin, isForcedTheme]);
 
   const startTransition = useCallback(() => {
     setAwaitingModal(false);
@@ -122,6 +143,17 @@ function MainPage() {
   const handleTransitionComplete = useCallback(() => {
     setDisplayTheme('slytherin');
     setIsTransitioning(false);
+    resetTransitionTriggered();
+  }, [resetTransitionTriggered]);
+
+  const startMarineroTransition = useCallback(() => {
+    setAwaitingMarineroModal(false);
+    setIsMarineroTransitioning(true);
+  }, []);
+
+  const handleMarineroTransitionComplete = useCallback(() => {
+    setDisplayTheme('marinero');
+    setIsMarineroTransitioning(false);
     resetTransitionTriggered();
   }, [resetTransitionTriggered]);
 
@@ -147,11 +179,18 @@ function MainPage() {
       {!state.showDosChat && (
         <>
           {!isForcedTheme && (
-            <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
+            <>
+              <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
+              <MarineroTransitionModal forceShow={awaitingMarineroModal} onConfirm={startMarineroTransition} />
+            </>
           )}
           <ThemeTransition
             isTransforming={isTransitioning}
             onComplete={handleTransitionComplete}
+          />
+          <MarineroThemeTransition
+            isTransforming={isMarineroTransitioning}
+            onComplete={handleMarineroTransitionComplete}
           />
           <main className="pt-0">
             <AnimatePresence mode="wait">

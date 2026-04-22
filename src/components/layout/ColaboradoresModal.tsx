@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
+const protagonista = { file: 'Ignacio', name: 'Ignacio' };
+
 const colaboradores = [
   { file: 'Jefo', name: 'Jefo' },
   { file: 'Mou', name: 'Mou' },
@@ -55,13 +57,34 @@ export default function ColaboradoresModal({ onClose }: { onClose: () => void })
             <h3 className="text-sky-300 text-xs font-semibold uppercase tracking-widest mb-5">
               Colaboradores
             </h3>
+
+            {/* Ignacio — protagonista */}
+            <div className="flex justify-center mb-6">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0, type: 'spring', stiffness: 130, damping: 14 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-sky-400/70 shadow-xl shadow-sky-900/60 bg-sky-950">
+                  <img
+                    src={`/images/persons/${protagonista.file}.png`}
+                    alt={protagonista.name}
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+                <span className="text-white text-base font-semibold">{protagonista.name}</span>
+              </motion.div>
+            </div>
+
+            {/* Resto de colaboradores */}
             <div className="flex flex-wrap justify-center gap-6">
               {colaboradores.map((p, i) => (
                 <motion.div
                   key={p.file}
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.05 * i, type: 'spring', stiffness: 130, damping: 14 }}
+                  transition={{ delay: 0.05 * (i + 1), type: 'spring', stiffness: 130, damping: 14 }}
                   className="flex flex-col items-center gap-2"
                 >
                   {/* Circular avatar */}

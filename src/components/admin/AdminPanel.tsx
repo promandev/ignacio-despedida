@@ -22,6 +22,7 @@ export default function AdminPanel() {
     resetRosco,
     setCounter,
     setShowTransitionModal,
+    setShowMarineroModal,
     setForcedUserTheme,
     setShowDosChat,
     isFirebase,
@@ -115,6 +116,31 @@ export default function AdminPanel() {
                 <p className="text-xs text-gray-500">
                   {state.showTransitionModal
                     ? 'Al volver: verás el modal épico y la transición'
+                    : 'Al volver: cambio directo de temática sin animación'}
+                </p>
+              </div>
+            </div>
+          )}
+          {/* Marinero modal toggle — only relevant when previewing Marinero */}
+          {state.currentTheme === 'marinero' && (
+            <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+              <button
+                onClick={() => setShowMarineroModal(!state.showMarineroModal)}
+                className={`relative w-12 h-6 rounded-full overflow-hidden transition-colors ${
+                  state.showMarineroModal ? 'bg-sky-600' : 'bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    state.showMarineroModal ? 'translate-x-6' : ''
+                  }`}
+                />
+              </button>
+              <div>
+                <p className="text-sm text-gray-300">Modal + transición marina</p>
+                <p className="text-xs text-gray-500">
+                  {state.showMarineroModal
+                    ? 'Al volver: verás el modal marino y la transición'
                     : 'Al volver: cambio directo de temática sin animación'}
                 </p>
               </div>

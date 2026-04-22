@@ -13,6 +13,7 @@ const INITIAL_STATE: GameState = {
   currentTheme: 'carmena',
   transitionTriggered: false,
   showTransitionModal: true,
+  showMarineroModal: true,
   forcedUserTheme: null,
   showDosChat: false,
   counters: {
@@ -69,6 +70,8 @@ interface GameStateContextType {
   triggerTransition: () => void;
   setThemeWithModal: (theme: ThemeName, withModal: boolean) => void;
   setShowTransitionModal: (show: boolean) => void;
+  setShowMarineroModal: (show: boolean) => void;
+  triggerMarineroTransition: () => void;
   toggleHorcrux: (id: HorcruxId) => void;
   setHorcrux: (id: HorcruxId, value: boolean) => void;
   updateRoscoStatus: (letter: string, status: RoscoLetterStatus) => void;
@@ -100,6 +103,8 @@ const FALLBACK_CONTEXT: GameStateContextType = {
   triggerTransition: () => {},
   setThemeWithModal: () => {},
   setShowTransitionModal: () => {},
+  setShowMarineroModal: () => {},
+  triggerMarineroTransition: () => {},
   toggleHorcrux: () => {},
   setHorcrux: () => {},
   updateRoscoStatus: () => {},
@@ -299,6 +304,14 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     update((s) => ({ ...s, showTransitionModal: show }));
   }, [update]);
 
+  const setShowMarineroModal = useCallback((show: boolean) => {
+    update((s) => ({ ...s, showMarineroModal: show }));
+  }, [update]);
+
+  const triggerMarineroTransition = useCallback(() => {
+    update((s) => ({ ...s, transitionTriggered: true, currentTheme: 'marinero' }));
+  }, [update]);
+
   const setThemeWithModal = useCallback((theme: ThemeName, withModal: boolean) => {
     update((s) => ({ ...s, currentTheme: theme, showTransitionModal: withModal }));
   }, [update]);
@@ -348,6 +361,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         triggerTransition,
         setThemeWithModal,
         setShowTransitionModal,
+        setShowMarineroModal,
+        triggerMarineroTransition,
         toggleHorcrux,
         setHorcrux,
         updateRoscoStatus,

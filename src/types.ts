@@ -46,6 +46,7 @@ export interface GameState {
   currentTheme: ThemeName;
   transitionTriggered: boolean;
   showTransitionModal: boolean;
+  showMarineroModal: boolean;
   forcedUserTheme: ThemeName | null;
   showDosChat: boolean;
   horcruxes: HorcruxState;
