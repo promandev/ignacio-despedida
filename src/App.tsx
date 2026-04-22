@@ -25,7 +25,11 @@ function MainPage() {
   const [awaitingModal, setAwaitingModal] = useState(false);
 
   const [displayTheme, setDisplayTheme] = useState<ThemeName>(() => {
-    // Admin: always uses shared currentTheme (set from admin panel)
+    // Admin previewing transition: start at carmena if wanting to see the full transition
+    if (isAdmin && state.currentTheme === 'slytherin' && state.showTransitionModal) {
+      return 'carmena';
+    }
+    // Admin normal: use current theme
     if (isAdmin) return state.currentTheme;
     // Non-admin with forced theme: use it directly
     if (state.forcedUserTheme) return state.forcedUserTheme;
@@ -47,11 +51,12 @@ function MainPage() {
   }, [displayTheme]);
 
   // Admin: sync displayTheme with currentTheme from shared state
+  // NOTE: Don't sync during transition preview (when showTransitionModal is true)
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && !(state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena')) {
       setDisplayTheme(state.currentTheme);
     }
-  }, [isAdmin, state.currentTheme]);
+  }, [isAdmin, state.currentTheme, state.showTransitionModal, displayTheme]);
 
   // Non-admin with forced theme: sync displayTheme when forcedUserTheme changes
   useEffect(() => {
@@ -71,6 +76,14 @@ function MainPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, state.forcedUserTheme]);
+
+  // Admin preview transition
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
+      setAwaitingModal(true);
+    }
+  }, [isAdmin, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal]);
 
   // Non-admin time-based transition trigger (only when no forced theme)
   useEffect(() => {
@@ -98,7 +111,7 @@ function MainPage() {
   return (
     <>
       <Header />
-      {/* TransitionModal: only for non-admin time-based trigger */}
+      {/* TransitionModal: for admin preview OR non-admin time-based trigger */}
       {!isForcedTheme && (
         <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
       )}
