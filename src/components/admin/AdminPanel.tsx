@@ -5,37 +5,27 @@ import { useGameState } from '../../context/GameStateContext';
 import { horcruxes } from '../../data/horcruxes';
 import { roscoQuestions, ROSCO_LETTERS } from '../../data/roscoQuestions';
 import type { ThemeName, HorcruxId } from '../../types';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export default function AdminPanel() {
   const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const {
     state,
+    setTheme,
     setHorcrux,
     resetRoscoLetter,
     addBonusHint,
     resetRosco,
     setCounter,
     setShowTransitionModal,
+    setForcedUserTheme,
     isFirebase,
   } = useGameState();
 
-  // Theme is a LOCAL admin preview — never saved to shared state.
-  // Game data (horcruxes, counters, rosco) uses direct context methods → immediate shared save.
-  const [previewTheme, setPreviewTheme] = useState<ThemeName>(state.currentTheme);
-
   const handleBack = () => {
-    // Pass preview intent via navigation state; App.tsx handles the display
-    navigate('/', {
-      state: {
-        adminPreviewTheme: previewTheme,
-        adminPlayTransition: previewTheme === 'slytherin',
-      },
-    });
+    navigate('/');
   };
-
-  const themeChanged = previewTheme !== state.currentTheme;
 
   useEffect(() => {
     if (!isAdmin) navigate('/');
@@ -67,13 +57,8 @@ export default function AdminPanel() {
           <div className="flex gap-3">
             <button
               onClick={handleBack}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${
-                themeChanged
-                  ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
-                  : 'bg-gray-800 hover:bg-gray-700 text-gray-200'
-              }`}
+              className="px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200"
             >
-              {themeChanged && <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />}
               ← Volver a web
             </button>
             <button
@@ -86,23 +71,23 @@ export default function AdminPanel() {
         </div>
 
         {/* Theme control */}
-        <Section title="🎨 Control de Temática" subtitle="Cambia entre las dos temáticas de la web">
+        <Section title="🎨 Control de Temática (vista admin)" subtitle="Cambia la temática que ves tú como admin al volver a la web">
           <div className="flex flex-wrap gap-3">
             <ThemeButton
-              active={previewTheme === 'carmena'}
-              onClick={() => setPreviewTheme('carmena')}
+              active={state.currentTheme === 'carmena'}
+              onClick={() => setTheme('carmena')}
               icon="🏛️"
               label="Manuela Carmena"
             />
             <ThemeButton
-              active={previewTheme === 'slytherin'}
-              onClick={() => setPreviewTheme('slytherin')}
+              active={state.currentTheme === 'slytherin'}
+              onClick={() => setTheme('slytherin')}
               icon="🐍"
               label="Slytherin"
             />
           </div>
           {/* Modal toggle — only relevant when previewing Slytherin */}
-          {previewTheme === 'slytherin' && (
+          {state.currentTheme === 'slytherin' && (
             <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
               <button
                 onClick={() => setShowTransitionModal(!state.showTransitionModal)}
@@ -279,6 +264,38 @@ export default function AdminPanel() {
               );
             })}
           </div>
+        </Section>
+
+        {/* Forced user theme control */}
+        <Section
+          title="🎯 Temática del Usuario (no-admin)"
+          subtitle="Fuerza la temática que ven los usuarios normales. Por defecto, se usa la lógica de tiempo (Carmena → Slytherin el sábado a las 9AM)"
+        >
+          <div className="flex flex-wrap gap-3">
+            <ThemeButton
+              active={state.forcedUserTheme == null}
+              onClick={() => setForcedUserTheme(null)}
+              icon="⏱️"
+              label="Automático (por tiempo)"
+            />
+            <ThemeButton
+              active={state.forcedUserTheme === 'carmena'}
+              onClick={() => setForcedUserTheme('carmena')}
+              icon="🏛️"
+              label="Forzar Carmena"
+            />
+            <ThemeButton
+              active={state.forcedUserTheme === 'slytherin'}
+              onClick={() => setForcedUserTheme('slytherin')}
+              icon="🐍"
+              label="Forzar Slytherin"
+            />
+          </div>
+          {state.forcedUserTheme != null && (
+            <p className="mt-3 text-xs text-amber-400/80 bg-amber-900/20 rounded-lg p-2">
+              ⚠️ Temática forzada a <strong>{state.forcedUserTheme === 'carmena' ? 'Manuela Carmena' : 'Slytherin'}</strong>. Los usuarios no-admin verán esta temática independientemente de la hora.
+            </p>
+          )}
         </Section>
       </div>
     </div>

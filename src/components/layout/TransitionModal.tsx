@@ -30,6 +30,8 @@ export default function TransitionModal({ forceShow = false, onConfirm }: Props)
     if (state.transitionTriggered || state.currentTheme === 'slytherin') return;
     if (!state.showTransitionModal) return;
     if (forceShow) return;
+    // Skip time-based check when user theme is forced from admin
+    if (state.forcedUserTheme != null) return;
 
     const check = () => {
       if (Date.now() >= TARGET_UTC) {
@@ -39,7 +41,7 @@ export default function TransitionModal({ forceShow = false, onConfirm }: Props)
     check();
     const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
-  }, [state.transitionTriggered, state.currentTheme, forceShow]);
+  }, [state.transitionTriggered, state.currentTheme, state.forcedUserTheme, forceShow]);
 
   const handleOk = () => {
     setTransforming(true);

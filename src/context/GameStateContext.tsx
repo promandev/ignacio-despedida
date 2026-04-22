@@ -13,6 +13,7 @@ export const INITIAL_STATE: GameState = {
   currentTheme: 'carmena',
   transitionTriggered: false,
   showTransitionModal: true,
+  forcedUserTheme: null,
   counters: {
     copas: 0,
     aguasConGas: 0,
@@ -64,6 +65,7 @@ interface GameStateContextType {
   setCounter: (key: CounterKey, value: number) => void;
   batchUpdate: (patch: Partial<GameState>) => void;
   resetTransitionTriggered: () => void;
+  setForcedUserTheme: (theme: ThemeName | null) => void;
   isFirebase: boolean;
 }
 
@@ -269,6 +271,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     update((s) => ({ ...s, transitionTriggered: false }));
   }, [update]);
 
+  const setForcedUserTheme = useCallback((theme: ThemeName | null) => {
+    update((s) => ({ ...s, forcedUserTheme: theme }));
+  }, [update]);
+
   return (
     <GameStateContext.Provider
       value={{
@@ -293,6 +299,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         setCounter,
         batchUpdate,
         resetTransitionTriggered,
+        setForcedUserTheme,
         isFirebase: isFirebaseConfigured,
       }}
     >

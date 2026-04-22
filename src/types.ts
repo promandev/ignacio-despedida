@@ -36,6 +36,7 @@ export interface GameState {
   currentTheme: ThemeName;
   transitionTriggered: boolean;
   showTransitionModal: boolean;
+  forcedUserTheme: ThemeName | null;
   horcruxes: HorcruxState;
   rosco: RoscoState;
   counters: CountersState;

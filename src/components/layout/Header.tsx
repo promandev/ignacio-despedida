@@ -10,7 +10,12 @@ export default function Header() {
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
 
-  const isSlytherin = state.currentTheme === 'slytherin';
+  // Non-admin: use forcedUserTheme if set, otherwise time-based, otherwise currentTheme
+  const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
+  const effectiveTheme = isAdmin
+    ? state.currentTheme
+    : (state.forcedUserTheme ?? (Date.now() >= TARGET_UTC ? 'slytherin' : state.currentTheme));
+  const isSlytherin = effectiveTheme === 'slytherin';
 
   return (
     <>

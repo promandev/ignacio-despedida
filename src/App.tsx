@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { GameStateProvider, useGameState } from './context/GameStateContext';
 import type { ThemeName } from './types';
+import { useAuth } from './hooks/useAuth';
 import Header from './components/layout/Header';
 import TransitionModal from './components/layout/TransitionModal';
 import ThemeTransition from './components/layout/ThemeTransition';
@@ -10,28 +11,27 @@ import CarmenaTheme from './components/carmena/CarmenaTheme';
 import SlytherinTheme from './components/slytherin/SlytherinTheme';
 import AdminPanel from './components/admin/AdminPanel';
 
+// April 25, 2026, 9:00 AM Madrid time (CEST = UTC+2) => 7:00 UTC
+const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
+
 function MainPage() {
   const { state, resetTransitionTriggered } = useGameState();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
-  // Navigation state set by AdminPanel when returning from admin preview
-  type AdminNav = { adminPreviewTheme?: ThemeName; adminPlayTransition?: boolean };
-  const adminNav = (location.state as AdminNav) ?? {};
-  const hasAdminPreview = !!adminNav.adminPreviewTheme;
+  // Non-admin with forcedUserTheme set: skip all transition logic
+  const isForcedTheme = !isAdmin && state.forcedUserTheme != null;
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [awaitingModal, setAwaitingModal] = useState(false);
-  // isAdminPreview: prevents shared-state sync from overriding admin preview display
-  const [isAdminPreview, setIsAdminPreview] = useState(hasAdminPreview);
 
   const [displayTheme, setDisplayTheme] = useState<ThemeName>(() => {
-    if (hasAdminPreview) {
-      // If transition will play, start at carmena so the morph makes sense
-      if (adminNav.adminPlayTransition && state.showTransitionModal) return 'carmena';
-      return adminNav.adminPreviewTheme!;
-    }
-    return state.transitionTriggered ? 'carmena' : state.currentTheme;
+    // Admin: always uses shared currentTheme (set from admin panel)
+    if (isAdmin) return state.currentTheme;
+    // Non-admin with forced theme: use it directly
+    if (state.forcedUserTheme) return state.forcedUserTheme;
+    // Non-admin, auto mode: time-based
+    if (Date.now() >= TARGET_UTC && state.currentTheme === 'slytherin') return 'slytherin';
+    return 'carmena';
   });
 
   // Set data-theme on document for CSS variable theming
@@ -46,39 +46,43 @@ function MainPage() {
     }
   }, [displayTheme]);
 
-  // On mount: trigger admin preview transition (runs once)
-  const mountDone = useRef(false);
+  // Admin: sync displayTheme with currentTheme from shared state
   useEffect(() => {
-    if (mountDone.current) return;
-    mountDone.current = true;
+    if (isAdmin) {
+      setDisplayTheme(state.currentTheme);
+    }
+  }, [isAdmin, state.currentTheme]);
 
-    if (hasAdminPreview && adminNav.adminPlayTransition) {
-      if (state.showTransitionModal) {
-        // Modal ON: show modal first, animation starts on OK
-        setAwaitingModal(true);
+  // Non-admin with forced theme: sync displayTheme when forcedUserTheme changes
+  useEffect(() => {
+    if (!isAdmin && state.forcedUserTheme != null) {
+      setDisplayTheme(state.forcedUserTheme);
+    }
+  }, [isAdmin, state.forcedUserTheme]);
+
+  // Non-admin cleared force: revert to time-based
+  useEffect(() => {
+    if (!isAdmin && state.forcedUserTheme == null) {
+      if (Date.now() >= TARGET_UTC) {
+        setDisplayTheme(state.currentTheme === 'slytherin' ? 'slytherin' : 'carmena');
+      } else {
+        setDisplayTheme('carmena');
       }
-      // Modal OFF: no modal, no transition — displayTheme already set to slytherin in useState
     }
-    // Clear navigation state so back/forward doesn’t re-trigger
-    if (hasAdminPreview) {
-      navigate('/', { replace: true, state: null });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, state.forcedUserTheme]);
 
-  // Listen for real (time-based) transition trigger — only when NOT in admin preview mode
+  // Non-admin time-based transition trigger (only when no forced theme)
   useEffect(() => {
-    if (isAdminPreview) return;
+    if (isAdmin || isForcedTheme) return;
     if (state.transitionTriggered && state.currentTheme === 'slytherin' && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
       if (state.showTransitionModal) {
         setAwaitingModal(true);
       } else {
         setIsTransitioning(true);
       }
-    } else if (state.currentTheme !== displayTheme && !isTransitioning && !awaitingModal) {
-      setDisplayTheme(state.currentTheme);
     }
-  }, [state.currentTheme, state.transitionTriggered, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdminPreview]);
+  }, [state.transitionTriggered, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme]);
 
   const startTransition = useCallback(() => {
     setAwaitingModal(false);
@@ -88,14 +92,16 @@ function MainPage() {
   const handleTransitionComplete = useCallback(() => {
     setDisplayTheme('slytherin');
     setIsTransitioning(false);
-    setIsAdminPreview(false);
     resetTransitionTriggered();
   }, [resetTransitionTriggered]);
 
   return (
     <>
       <Header />
-      <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
+      {/* TransitionModal: only for non-admin time-based trigger */}
+      {!isForcedTheme && (
+        <TransitionModal forceShow={awaitingModal} onConfirm={startTransition} />
+      )}
       <ThemeTransition
         isTransforming={isTransitioning}
         onComplete={handleTransitionComplete}
