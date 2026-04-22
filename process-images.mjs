@@ -16,6 +16,7 @@ const filesToProcess = [
   ['horcruxes', 'harry.png'],
   ['carmena', 'ignacio.png'],
   ['slytherin', 'ignacio.png'],
+  ['marinero', 'ignacio.png'],
 ];
 
 async function removeWhiteBg(subdir, filename) {

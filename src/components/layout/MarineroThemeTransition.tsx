@@ -23,7 +23,11 @@ const ROCK_Y = [0, 3, -2, 4, -3, 2, -3, 2, -2, 3, -1, 0];
 
 export default function MarineroThemeTransition({ isTransforming, onComplete }: Props) {
   const [phase, setPhase] = useState(0);
-  // Phase 0: idle | 1: storm+waves | 2: image morph | 3: calm sea | 4: complete
+  // Phase 0: idle
+  // Phase 1: Draco showcase — green glow, dramatic entrance (2.5s)
+  // Phase 2: Overlap — marinero rises over Draco, both visible (3s)
+  // Phase 3: Calm sea — marinero only (2s)
+  // Phase 4: complete
 
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -35,12 +39,12 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
     }
 
     setPhase(1);
-    const t1 = setTimeout(() => setPhase(2), 1000);
-    const t2 = setTimeout(() => setPhase(3), 4000);
+    const t1 = setTimeout(() => setPhase(2), 2500);
+    const t2 = setTimeout(() => setPhase(3), 5500);
     const t3 = setTimeout(() => {
       setPhase(4);
       onCompleteRef.current();
-    }, 5800);
+    }, 7500);
 
     return () => {
       clearTimeout(t1);
@@ -51,7 +55,7 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
 
   if (!isTransforming && phase === 0) return null;
 
-  const isRocking = phase >= 1 && phase < 3;
+  const isRocking = phase >= 2 && phase < 3;
 
   return (
     <AnimatePresence>
@@ -63,15 +67,28 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
           transition={{ duration: 0.4 }}
           className="fixed inset-0 z-[150] flex items-center justify-center overflow-hidden"
         >
-          {/* Background: dark green → deep ocean blue */}
+          {/* Background: Slytherin dark green → transitional → deep ocean blue */}
           <motion.div
             className="absolute inset-0"
-            animate={{ backgroundColor: phase >= 3 ? '#0a1e3d' : '#0a0f0a' }}
-            transition={{ duration: 2.5 }}
+            animate={{
+              backgroundColor:
+                phase >= 3 ? '#0a1e3d' : phase >= 2 ? '#0a1520' : '#0a0f0a',
+            }}
+            transition={{ duration: 2 }}
           />
 
-          {/* Storm vignette pulse (phase 1-2) */}
-          {phase >= 1 && phase < 3 && (
+          {/* Slytherin green vignette (phase 1) */}
+          {phase === 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.5, 0.3, 0.6, 0.35] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.3)_0%,transparent_70%)] z-10"
+            />
+          )}
+
+          {/* Storm vignette pulse (phase 2) */}
+          {phase === 2 && (
             <motion.div
               animate={{ opacity: [0, 0.35, 0, 0.5, 0, 0.3, 0] }}
               transition={{ duration: 1.4, repeat: Infinity }}
@@ -89,8 +106,8 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
             />
           )}
 
-          {/* Lightning flashes → water splashes */}
-          {phase >= 1 && phase < 4 && (
+          {/* Lightning / flicker flashes (phase 2 transition) */}
+          {phase === 2 && (
             <>
               <motion.div
                 animate={{ opacity: [0, 0.7, 0, 0, 0.5, 0, 0.3, 0] }}
@@ -105,7 +122,7 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
             </>
           )}
 
-          {/* SCREEN ROCKING wrapper */}
+          {/* SCREEN ROCKING wrapper (only during overlap phase) */}
           <motion.div
             animate={isRocking ? { x: ROCK_X, y: ROCK_Y } : { x: 0, y: 0 }}
             transition={
@@ -115,7 +132,7 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
             }
             className="relative flex items-center justify-center w-full h-full"
           >
-            {/* Image card with ship rocking */}
+            {/* Image card container */}
             <motion.div
               animate={
                 isRocking
@@ -133,11 +150,17 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
               }
               className="relative w-64 h-64 md:w-80 md:h-80 z-20"
             >
-              {/* Animated glow border */}
+              {/* Green glow around Draco (phase 1) */}
               <motion.div
                 animate={{
                   boxShadow:
-                    phase >= 2
+                    phase === 1
+                      ? [
+                          '0 0 30px 8px rgba(16,185,129,0.5)',
+                          '0 0 80px 20px rgba(16,185,129,0.7)',
+                          '0 0 40px 10px rgba(16,185,129,0.5)',
+                        ]
+                      : phase >= 2
                       ? [
                           '0 0 20px 4px rgba(56,189,248,0.4)',
                           '0 0 70px 16px rgba(56,189,248,0.75)',
@@ -149,45 +172,77 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
                 className="absolute inset-0 rounded-2xl z-40 pointer-events-none"
               />
 
-              {/* Slytherin → fades out */}
+              {/* ── DRACO IMAGE ── */}
               <motion.div
                 className="absolute inset-0 flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0.85 }}
                 animate={{
-                  opacity: phase >= 2 ? 0 : 1,
-                  scale: phase >= 1 ? [1, 1.03, 0.97, 1.02, 1] : 1,
+                  // Phase 1: dramatic entrance, full visibility
+                  // Phase 2: still visible but fading as marinero overlaps
+                  // Phase 3+: gone
+                  opacity:
+                    phase === 1
+                      ? 1
+                      : phase === 2
+                      ? [1, 0.7, 0.4, 0]
+                      : 0,
+                  scale:
+                    phase === 1
+                      ? [0.85, 1.05, 1]
+                      : phase === 2
+                      ? [1, 0.97, 0.93]
+                      : 0.9,
                   filter:
-                    phase >= 2
-                      ? 'blur(12px) brightness(3) saturate(0)'
-                      : 'blur(0px) brightness(1) saturate(1)',
+                    phase >= 3
+                      ? 'blur(12px) brightness(0) saturate(0)'
+                      : phase === 2
+                      ? 'blur(0px) brightness(1) saturate(1)'
+                      : 'blur(0px) brightness(1.1) saturate(1.1)',
                 }}
                 transition={{
-                  opacity: { duration: 1.5 },
-                  scale: { duration: 0.4, repeat: phase >= 1 && phase < 2 ? Infinity : 0 },
+                  opacity: {
+                    duration: phase === 1 ? 0.8 : 2.5,
+                    ease: 'easeInOut',
+                  },
+                  scale: {
+                    duration: phase === 1 ? 1.2 : 2.5,
+                    ease: 'easeInOut',
+                  },
                   filter: { duration: 1.5 },
                 }}
               >
                 <img
                   src="/images/slytherin/ignacio.png"
-                  alt="Slytherin"
+                  alt="Draco Malfoy"
                   className="w-full h-full object-contain rounded-2xl"
                 />
+                {/* Slytherin green aura behind Draco */}
+                {phase === 1 && (
+                  <motion.div
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute inset-0 rounded-2xl shadow-[0_0_80px_25px_rgba(16,185,129,0.5)] -z-10"
+                  />
+                )}
               </motion.div>
 
-              {/* Marinero → fades in */}
+              {/* ── MARINERO IMAGE ── rises from below, overlapping Draco */}
               <motion.div
                 className="absolute inset-0 flex items-center justify-center"
                 animate={{
                   opacity: phase >= 2 ? 1 : 0,
-                  scale: phase >= 2 ? [0.85, 1.08, 1] : 0.8,
+                  scale: phase >= 2 ? [0.8, 1.08, 1] : 0.7,
+                  y: phase >= 2 ? [60, -5, 0] : 80,
                   filter:
-                    phase >= 2 && phase < 3
-                      ? 'brightness(1.5) contrast(1.2) saturate(1.3)'
+                    phase === 2
+                      ? 'brightness(1.4) contrast(1.15) saturate(1.2)'
                       : 'brightness(1) contrast(1) saturate(1)',
                 }}
                 transition={{
-                  opacity: { duration: 1.8, delay: 0.3 },
-                  scale: { duration: 1.8, delay: 0.3 },
-                  filter: { duration: 1, delay: 1.5 },
+                  opacity: { duration: 1.5, delay: phase === 2 ? 0.5 : 0 },
+                  scale: { duration: 2, delay: phase === 2 ? 0.5 : 0, ease: 'easeOut' },
+                  y: { duration: 2, delay: phase === 2 ? 0.5 : 0, ease: 'easeOut' },
+                  filter: { duration: 1, delay: 2 },
                 }}
               >
                 <img
@@ -202,8 +257,8 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
                 />
               </motion.div>
 
-              {/* Wave scan lines */}
-              {phase >= 1 && phase < 3 && (
+              {/* Wave scan lines (overlap phase) */}
+              {phase === 2 && (
                 <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden rounded-2xl">
                   {WAVE_LINES.map((g, i) => (
                     <motion.div
@@ -225,7 +280,24 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
             </motion.div>
           </motion.div>
 
-          {/* Floating sea symbols */}
+          {/* Floating Slytherin sparks (phase 1) */}
+          {phase === 1 && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+              {['🐍', '✦', '⚡', '🐍', '✦', '💚'].map((sym, i) => (
+                <motion.span
+                  key={`slytherin-${i}`}
+                  className="absolute text-xl"
+                  style={{ left: `${10 + i * 14}%`, bottom: '-6%' }}
+                  animate={{ y: [0, -(500 + i * 50)], opacity: [0, 0.5, 0] }}
+                  transition={{ duration: 3.5 + i * 0.3, repeat: Infinity, delay: i * 0.4, ease: 'easeOut' }}
+                >
+                  {sym}
+                </motion.span>
+              ))}
+            </div>
+          )}
+
+          {/* Floating sea symbols (phase 2+) */}
           {phase >= 2 && (
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
               {['⚓', '🌊', '⛵', '🐚', '🐬', '🌀', '🐙', '🦈'].map((sym, i) => (
@@ -253,13 +325,13 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <motion.p
-                    animate={{ opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                    className="text-sky-400 font-cinzel text-lg md:text-xl font-bold tracking-widest"
+                    animate={{ opacity: [0.7, 1, 0.7], textShadow: ['0 0 8px #10b981', '0 0 30px #10b981', '0 0 8px #10b981'] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-emerald-400 font-cinzel text-xl md:text-2xl font-bold tracking-widest"
                   >
-                    🌊 ¡TORMENTA EN EL HORIZONTE! 🌊
+                    🐍 Lord Draco Malfoy 🐍
                   </motion.p>
-                  <p className="text-gray-400 text-sm mt-1">Las aguas se agitan...</p>
+                  <p className="text-gray-400 text-sm mt-2">La serpiente acecha por última vez...</p>
                 </motion.div>
               )}
               {phase === 2 && (
@@ -270,11 +342,11 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <motion.p
-                    animate={{ scale: [1, 1.06, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="text-sky-300 font-cinzel text-xl md:text-2xl font-bold"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                    className="text-sky-400 font-cinzel text-lg md:text-xl font-bold tracking-widest"
                   >
-                    ⛵ La metamorfosis marina ⛵
+                    🌊 ¡La marea lo arrastra! 🌊
                   </motion.p>
                   <p className="text-gray-500 text-xs mt-2 tracking-widest uppercase">
                     Lord Malfoy → Marinero de Altura
