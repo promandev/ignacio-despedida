@@ -192,7 +192,7 @@ export default function ThemeTransition({ isTransforming, onComplete }: Props) {
                 }}
               >
                 <img
-                  src="/images/slytherin/ignacio.png"
+                  src="/images/slytherin/ignacio-draco.png"
                   alt="Slytherin"
                   className="w-full h-full object-contain rounded-2xl"
                 />

@@ -17,6 +17,7 @@ const filesToProcess = [
   ['horcruxes', 'harry.png', 'white'],
   ['carmena', 'ignacio.png', 'white'],
   ['slytherin', 'ignacio.png', 'white'],
+  ['slytherin', 'ignacio-draco.png', 'white'],
   ['marinero', 'ignacio.png', 'gray'],
 ];
 

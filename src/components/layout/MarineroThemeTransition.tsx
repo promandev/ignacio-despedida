@@ -212,7 +212,7 @@ export default function MarineroThemeTransition({ isTransforming, onComplete }: 
                 }}
               >
                 <img
-                  src="/images/slytherin/ignacio.png"
+                  src="/images/slytherin/ignacio-draco.png"
                   alt="Draco Malfoy"
                   className="w-full h-full object-contain rounded-2xl"
                 />
