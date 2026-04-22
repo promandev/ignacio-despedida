@@ -256,6 +256,18 @@ body {
   text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
 }
 
+.dos-chat-user-ignacio {
+  color: #ffcc00;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);
+}
+
+.dos-chat-user-admin {
+  color: #33ff33;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
 .dos-chat-user {
   color: #ffcc00;
   font-weight: bold;
@@ -311,8 +323,8 @@ body {
   font-size: inherit;
   line-height: inherit;
   caret-color: transparent;
-  flex: 1;
   min-width: 0;
+  padding: 0;
   text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
 }
 

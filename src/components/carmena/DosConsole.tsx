@@ -3,9 +3,6 @@ import { subscribeToChatMessages, sendChatMessage } from '../../firebase/config'
 import { setAdminAuthSession } from '../../hooks/useAuth';
 import type { ChatMessage } from '../../types';
 
-const ADMIN_USER = (import.meta.env.VITE_ADMIN_USER ?? 'admin').toLowerCase();
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS ?? '';
-
 type AuthStep = 'boot' | 'username' | 'password' | 'authenticated';
 
 function formatChatTime(timestamp: number): string {
@@ -20,6 +17,28 @@ interface ConsoleLine {
   type: 'system' | 'input' | 'error' | 'chat' | 'image';
   username?: string;
   image?: string;
+}
+
+// Secure credential validation (timing-safe comparison to prevent timing attacks)
+function constantTimeCompare(a: string, b: string): boolean {
+  const aLength = (a || '').length;
+  const bLength = (b || '').length;
+  
+  if (aLength !== bLength) {
+    // Still compare to avoid timing leak on length
+    const minLength = Math.min(aLength, bLength);
+    let result = 0;
+    for (let i = 0; i < minLength; i++) {
+      result |= (a?.charCodeAt(i) || 0) ^ (b?.charCodeAt(i) || 0);
+    }
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < aLength; i++) {
+    result |= (a?.charCodeAt(i) || 0) ^ (b?.charCodeAt(i) || 0);
+  }
+  return result === 0;
 }
 
 function compressImage(file: File, maxWidth = 800, quality = 0.6): Promise<string> {
@@ -154,20 +173,23 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         addLine({ text: `> ${value}`, type: 'input' });
         setInput('');
 
-        // Check admin user (case-insensitive)
-        if (value.toLowerCase() === ADMIN_USER) {
+        const authUser1 = import.meta.env.VITE_AUTH_USER_1 || '';
+        const authUser2 = import.meta.env.VITE_AUTH_USER_2 || '';
+
+        // Check first user (case-insensitive, but trim first for robustness)
+        if (constantTimeCompare(value.toLowerCase().trim(), authUser1.toLowerCase())) {
           setIsAdmin(true);
           addLine({ text: '', type: 'system' });
           addLine({
-            text: 'Fecha de nacimiento con formato DD/MM/YYYY:',
+            text: 'Contraseña:',
             type: 'system',
           });
           setAuthStep('password');
           return;
         }
 
-        // Check non-admin user (exact match)
-        if (value === 'Ignacio') {
+        // Check second user (exact match after trim for robustness)
+        if (constantTimeCompare(value.trim(), authUser2)) {
           setIsAdmin(false);
           addLine({ text: '', type: 'system' });
           addLine({
@@ -178,7 +200,8 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
           return;
         }
 
-        addLine({ text: 'ERROR: Usuario no reconocido.', type: 'error' });
+        // Generic error message for security
+        addLine({ text: 'ERROR: Credenciales inválidas.', type: 'error' });
         addLine({ text: '', type: 'system' });
         addLine({
           text: 'Introduce tu nombre (primera letra en mayusculas):',
@@ -192,13 +215,18 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         addLine({ text: `> ${isAdmin ? '*'.repeat(value.length) : value}`, type: 'input' });
         setInput('');
 
-        const isValidAdmin = isAdmin && value === ADMIN_PASS;
-        const isValidUser = !isAdmin && value === '27/07/1991';
+        const authCred1 = import.meta.env.VITE_AUTH_CRED_1 || '';
+        const authCred2 = import.meta.env.VITE_AUTH_CRED_2 || '';
 
-        if (isValidAdmin || isValidUser) {
+        // Use timing-safe comparison to prevent timing attacks
+        const isValidAdmin = isAdmin && constantTimeCompare(value, authCred1);
+        const isValidUser2 = !isAdmin && constantTimeCompare(value, authCred2);
+
+        if (isValidAdmin || isValidUser2) {
           onSessionRoleChange(isValidAdmin);
           setAdminAuthSession(isValidAdmin);
-          const displayName = isAdmin ? 'Usuario Desconocido' : 'Ignacio';
+          const authUser2 = import.meta.env.VITE_AUTH_USER_2 || '';
+          const displayName = isAdmin ? 'Usuario Desconocido' : authUser2;
           setUsername(displayName);
           addLine({ text: '', type: 'system' });
           addLine({ text: '════════════════════════════════════════════', type: 'system' });
@@ -210,10 +238,11 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
           return;
         }
 
-        addLine({ text: 'ERROR: Datos incorrectos.', type: 'error' });
+        // Generic error message for security (don't reveal which field is wrong)
+        addLine({ text: 'ERROR: Credenciales inválidas.', type: 'error' });
         addLine({ text: '', type: 'system' });
         addLine({
-          text: 'Fecha de nacimiento con formato DD/MM/YYYY:',
+          text: isAdmin ? 'Contraseña:' : 'Fecha de nacimiento con formato DD/MM/YYYY:',
           type: 'system',
         });
         return;
@@ -255,6 +284,15 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
 
   const isPasswordStep = authStep === 'password';
 
+  // Auto-format date input for Ignacio (DD/MM/YYYY)
+  const formatDateInput = (value: string): string => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+  };
+
   return (
     <div
       className="dos-console"
@@ -276,7 +314,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         {authStep === 'authenticated' &&
           chatMessages.map((msg) => (
             <div key={msg.id || `${msg.username}-${msg.timestamp}`} className="dos-chat-msg">
-              <span className="dos-chat-user">
+              <span className={msg.username === 'Ignacio' ? 'dos-chat-user-ignacio' : 'dos-chat-user-admin'}>
                 [{formatChatTime(msg.timestamp)}] {msg.username || 'Usuario'}:
               </span>{' '}
               {msg.image ? (
@@ -303,8 +341,16 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
                 ref={inputRef}
                 type={isPasswordStep && isAdmin ? 'password' : 'text'}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  let newValue = e.target.value;
+                  // Auto-format date for Ignacio password step
+                  if (isPasswordStep && !isAdmin) {
+                    newValue = formatDateInput(newValue);
+                  }
+                  setInput(newValue);
+                }}
                 className="dos-input"
+                style={{ width: `${input.length}ch` }}
                 autoFocus
                 autoComplete="off"
                 autoCorrect="off"
@@ -313,8 +359,8 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
               />
               <span className="dos-cursor">█</span>
             </form>
-            {/* Photo button for non-admin authenticated users */}
-            {authStep === 'authenticated' && !isAdmin && (
+            {/* Photo button for all authenticated users */}
+            {authStep === 'authenticated' && (
               <>
                 <button
                   type="button"

@@ -145,13 +145,13 @@ export default function CarmenaTheme() {
             </motion.div>
 
             <motion.div {...fadeUp} className="bg-white rounded-2xl p-6 shadow-sm border border-emerald-100">
-              <div className="text-3xl mb-3">⛵</div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Pasión por los barcos</h3>
+              <div className="text-3xl mb-3">🚂</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Pasión por los trenes</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Si no está redactando un recurso o hablando de Madrid Central, está mirando barcos.
-                Su sueño: un velero donde pueda navegar y, al mismo tiempo, explicar por qué
-                los barcos también deberían ser de bajas emisiones.
-                <em className="text-emerald-600"> Capitán Ignacio: "¡Todos a bordo del Madrid Central marítimo!"</em>
+                Si no está redactando un recurso o debatiendo sobre Madrid Central, está soñando con trenes.
+                Cree firmemente que el AVE es la respuesta a todos los problemas de movilidad del país
+                y que cualquier ciudad que se precie debería tener al menos una línea de cercanías con nombre propio.
+                <em className="text-emerald-600"> "¡Todos al andén número 1 del Madrid Central Express!"</em>
               </p>
             </motion.div>
 

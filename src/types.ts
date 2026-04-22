@@ -1,4 +1,4 @@
-export type ThemeName = 'carmena' | 'slytherin';
+export type ThemeName = 'carmena' | 'slytherin' | 'marinero';
 
 export type HorcruxId = 'diario' | 'anillo' | 'guardapelo' | 'copa' | 'diadema' | 'nagini' | 'harry';
 
@@ -23,6 +23,8 @@ export interface RoscoState {
   currentLetter: string;
   isPaused: boolean;
   isComplete: boolean;
+  timeRemaining: number; // seconds
+  timeBonusFromHorcruxes: number; // seconds added by horcruxes
 }
 
 export interface CountersState {
@@ -64,4 +66,5 @@ export interface Horcrux {
   challenge: string;
   badgeImage: string;
   order: number;
+  lore: string; // short flavour text shown in the "horcrux gained" modal
 }

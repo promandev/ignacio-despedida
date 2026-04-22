@@ -1,15 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useGameState } from '../../context/GameStateContext';
 import { horcruxes } from '../../data/horcruxes';
 import { roscoQuestions, ROSCO_LETTERS } from '../../data/roscoQuestions';
+import { deleteChatMessages } from '../../firebase/config';
 import type { ThemeName, HorcruxId } from '../../types';
 import { useEffect } from 'react';
 
 export default function AdminPanel() {
   const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const {
     state,
     setTheme,
@@ -86,13 +89,18 @@ export default function AdminPanel() {
               icon="🐍"
               label="Slytherin"
             />
-          </div>
-          {/* Modal toggle — only relevant when previewing Slytherin */}
+            <ThemeButton
+              active={state.currentTheme === 'marinero'}
+              onClick={() => setTheme('marinero')}
+              icon="⚓"
+              label="Marinero"
+            />
+          </div>          {/* Modal toggle — only relevant when previewing Slytherin */}
           {state.currentTheme === 'slytherin' && (
             <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
               <button
                 onClick={() => setShowTransitionModal(!state.showTransitionModal)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
+                className={`relative w-12 h-6 rounded-full overflow-hidden transition-colors ${
                   state.showTransitionModal ? 'bg-emerald-600' : 'bg-gray-600'
                 }`}
               >
@@ -291,10 +299,16 @@ export default function AdminPanel() {
               icon="🐍"
               label="Forzar Slytherin"
             />
+            <ThemeButton
+              active={state.forcedUserTheme === 'marinero'}
+              onClick={() => setForcedUserTheme('marinero')}
+              icon="⚓"
+              label="Forzar Marinero"
+            />
           </div>
           {state.forcedUserTheme != null && (
             <p className="mt-3 text-xs text-amber-400/80 bg-amber-900/20 rounded-lg p-2">
-              ⚠️ Temática forzada a <strong>{state.forcedUserTheme === 'carmena' ? 'Manuela Carmena' : 'Slytherin'}</strong>. Los usuarios no-admin verán esta temática independientemente de la hora.
+              ⚠️ Temática forzada a <strong>{state.forcedUserTheme === 'carmena' ? 'Manuela Carmena' : state.forcedUserTheme === 'slytherin' ? 'Slytherin' : 'Marinero'}</strong>. Los usuarios no-admin verán esta temática independientemente de la hora.
             </p>
           )}
         </Section>
@@ -307,7 +321,7 @@ export default function AdminPanel() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowDosChat(!state.showDosChat)}
-              className={`relative w-14 h-7 rounded-full transition-colors ${
+              className={`relative w-14 h-7 rounded-full overflow-hidden transition-colors ${
                 state.showDosChat ? 'bg-emerald-600' : 'bg-gray-600'
               }`}
             >
@@ -323,15 +337,44 @@ export default function AdminPanel() {
               </p>
               <p className="text-xs text-gray-500">
                 {state.showDosChat
-                  ? 'Los usuarios ven la consola DOS en lugar de la temática de Carmena'
+                  ? 'Admin: consola con header. Usuarios: pantalla completa.'
                   : 'Los usuarios ven la web normal'}
               </p>
             </div>
           </div>
-          {state.showDosChat && (
-            <p className="mt-3 text-xs text-green-400/80 bg-green-900/20 rounded-lg p-2">
-              💻 La consola DOS está activa. Al volver a la web verás la consola como admin (con header). Los no-admin la ven a pantalla completa.
-            </p>
+        </Section>
+
+        {/* Chat message history management */}
+        <Section
+          title="🗑️ Historial del Chat"
+          subtitle="Borra todos los mensajes del chat de la consola DOS"
+        >
+          {deleteConfirm ? (
+            <div className="flex items-center gap-3 p-3 bg-red-900/20 rounded-lg border border-red-700/30">
+              <p className="text-sm text-red-300 flex-1">¿Seguro que quieres borrar todos los mensajes? Esta acción no se puede deshacer.</p>
+              <button
+                onClick={() => {
+                  deleteChatMessages();
+                  setDeleteConfirm(false);
+                }}
+                className="px-4 py-2 text-sm bg-red-700 text-white rounded-lg hover:bg-red-600 transition-colors whitespace-nowrap"
+              >
+                Sí, borrar todo
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="px-4 py-2 text-sm bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              className="px-4 py-2 text-sm bg-red-900/50 text-red-300 rounded-lg border border-red-700/30 hover:bg-red-900/70 transition-all flex items-center gap-2"
+            >
+              🗑️ Borrar historial del chat
+            </button>
           )}
         </Section>
       </div>

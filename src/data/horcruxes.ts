@@ -8,6 +8,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Convencer a un muggle para que le pinte la Marca Tenebrosa en el brazo.',
     badgeImage: '/images/horcruxes/diario.png',
     order: 1,
+    lore: 'Un diario encantado que ocultaba el alma de Voldemort. Destruido por la espada de la basilisco.',
   },
   {
     id: 'anillo',
@@ -16,6 +17,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Convencer a alguien para que le preste un calcetín (usado o no) para liberar a un "elfo invisible".',
     badgeImage: '/images/horcruxes/anillo.png',
     order: 2,
+    lore: 'La Piedra de la Resurrección engastada en el anillo maldito de los Gaunt. Dumbledore pagó un alto precio por destruirlo.',
   },
   {
     id: 'guardapelo',
@@ -24,6 +26,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Se le entrega una caja de grageas de todos los sabores. Debe convencer a varias personas para que coman una al mismo tiempo que él. Si la otra persona tiene suerte y él no: pierde y deberá beber o cumplir un reto impuesto por esa persona.',
     badgeImage: '/images/horcruxes/guardapelo.png',
     order: 3,
+    lore: 'El medallón de la familia Slytherin, robado por Regulus Black. Destruido en el lago helado por Ron Weasley.',
   },
   {
     id: 'copa',
@@ -32,6 +35,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Crear un "elixir mágico" mezclando 3 bebidas disponibles. Convencer a alguien para que le ponga un nombre y lo pruebe. Si nadie acepta: Draco deberá beberlo entero.',
     badgeImage: '/images/horcruxes/copa.png',
     order: 4,
+    lore: 'La copa dorada de Hufflepuff, guardada en la bóveda de Bellatrix en Gringotts. Destruida por Hermione con un colmillo de basilisco.',
   },
   {
     id: 'diadema',
@@ -40,6 +44,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Encontrar un objeto cualquiera en el suelo. Convencer a mínimo 3 personas para que toquen el objeto a la vez, cuenten hasta 3 y al llegar a 3: todos deben saltar como si usaran un traslador.',
     badgeImage: '/images/horcruxes/diadema.png',
     order: 5,
+    lore: 'La diadema que prometía sabiduría ilimitada, escondida en la Sala de los Menesteres. Destruida por el Fiendfyre de Crabbe.',
   },
   {
     id: 'nagini',
@@ -48,6 +53,7 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Retar a un muggle (o varios) que lleve algo verde. Jugar a Piedra, Papel o Tijera. Si gana: continúa. Si pierde: bebe o cumple un reto impuesto.',
     badgeImage: '/images/horcruxes/nagini.png',
     order: 6,
+    lore: 'La serpiente familiar de Voldemort, convertida en Horrocrux. Decapitada por Neville con la Espada de Gryffindor.',
   },
   {
     id: 'harry',
@@ -56,5 +62,6 @@ export const horcruxes: Horcrux[] = [
     challenge: 'Convencer a alguien con gafas para que se deje pintar el rayo de Harry en la frente y sacarse una foto con él.',
     badgeImage: '/images/horcruxes/harry.png',
     order: 7,
+    lore: 'El Horrocrux accidental. Harry llevó un fragmento del alma de Voldemort hasta que se sacrificó en el Bosque Prohibido.',
   },
 ];

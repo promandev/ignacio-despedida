@@ -10,10 +10,13 @@ import ThemeTransition from './components/layout/ThemeTransition';
 import CarmenaTheme from './components/carmena/CarmenaTheme';
 import DosConsole from './components/carmena/DosConsole';
 import SlytherinTheme from './components/slytherin/SlytherinTheme';
+import MarineroTheme from './components/marinero/MarineroTheme';
 import AdminPanel from './components/admin/AdminPanel';
 
 // April 25, 2026, 9:00 AM Madrid time (CEST = UTC+2) => 7:00 UTC
 const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
+// April 26, 2026, 10:00 AM Madrid time (CEST = UTC+2) => 8:00 UTC
+const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
 
 function MainPage() {
   const { state, resetTransitionTriggered } = useGameState();
@@ -35,7 +38,8 @@ function MainPage() {
     if (isAdmin) return state.currentTheme;
     // Non-admin with forced theme: use it directly
     if (state.forcedUserTheme) return state.forcedUserTheme;
-    // Non-admin, auto mode: time-based
+    // Non-admin, auto mode: time-based (marinero > slytherin > carmena)
+    if (Date.now() >= MARINERO_UTC && state.currentTheme === 'marinero') return 'marinero';
     if (Date.now() >= TARGET_UTC && state.currentTheme === 'slytherin') return 'slytherin';
     return 'carmena';
   });
@@ -47,7 +51,7 @@ function MainPage() {
     if (meta) {
       meta.setAttribute(
         'content',
-        displayTheme === 'slytherin' ? '#0a0f0a' : '#00A959'
+        displayTheme === 'slytherin' ? '#0a0f0a' : displayTheme === 'marinero' ? '#0a3d62' : '#00A959'
       );
     }
   }, [displayTheme]);
@@ -70,7 +74,9 @@ function MainPage() {
   // Non-admin cleared force: revert to time-based
   useEffect(() => {
     if (!isAdmin && state.forcedUserTheme == null) {
-      if (Date.now() >= TARGET_UTC) {
+      if (Date.now() >= MARINERO_UTC) {
+        setDisplayTheme(state.currentTheme === 'marinero' ? 'marinero' : state.currentTheme === 'slytherin' ? 'slytherin' : 'carmena');
+      } else if (Date.now() >= TARGET_UTC) {
         setDisplayTheme(state.currentTheme === 'slytherin' ? 'slytherin' : 'carmena');
       } else {
         setDisplayTheme('carmena');
@@ -98,6 +104,15 @@ function MainPage() {
       }
     }
   }, [state.transitionTriggered, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme]);
+
+  // Non-admin marinero trigger: direct switch, no modal/animation
+  useEffect(() => {
+    if (isAdmin || isForcedTheme) return;
+    if (state.transitionTriggered && state.currentTheme === 'marinero' && displayTheme !== 'marinero' && !isTransitioning && !awaitingModal) {
+      setDisplayTheme('marinero');
+      resetTransitionTriggered();
+    }
+  }, [state.transitionTriggered, state.currentTheme, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme, resetTransitionTriggered]);
 
   const startTransition = useCallback(() => {
     setAwaitingModal(false);
@@ -142,6 +157,8 @@ function MainPage() {
             <AnimatePresence mode="wait">
               {displayTheme === 'carmena' ? (
                 <CarmenaTheme key="carmena" />
+              ) : displayTheme === 'marinero' ? (
+                <MarineroTheme key="marinero" />
               ) : (
                 <SlytherinTheme key="slytherin" />
               )}

@@ -3,33 +3,47 @@ import { useNavigate } from 'react-router-dom';
 import { useGameState } from '../../context/GameStateContext';
 import { useAuth } from '../../hooks/useAuth';
 import LoginModal from './LoginModal';
+import ColaboradoresModal from './ColaboradoresModal';
 
 export default function Header() {
   const { state } = useGameState();
   const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
+  const [showColabs, setShowColabs] = useState(false);
 
   // Non-admin: use forcedUserTheme if set, otherwise time-based, otherwise currentTheme
   const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
+  const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
   const effectiveTheme = isAdmin
     ? state.currentTheme
-    : (state.forcedUserTheme ?? (Date.now() >= TARGET_UTC ? 'slytherin' : state.currentTheme));
+    : (
+        state.forcedUserTheme ??
+        (Date.now() >= MARINERO_UTC ? 'marinero' : Date.now() >= TARGET_UTC ? 'slytherin' : state.currentTheme)
+      );
   const isSlytherin = effectiveTheme === 'slytherin';
+  const isMarinero = effectiveTheme === 'marinero';
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-1000">
         <div
           className={`
-            ${isSlytherin ? 'bg-black/80 border-b border-emerald-900/50' : 'bg-white/80 border-b border-emerald-200'}
+            ${isSlytherin || isMarinero ? 'bg-black/80 border-b border-sky-900/50' : 'bg-white/80 border-b border-emerald-200'}
             backdrop-blur-lg
           `}
         >
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             {/* Logo / Title */}
             <div className="flex items-center gap-2">
-              {isSlytherin ? (
+              {isMarinero ? (
+                <>
+                  <span className="text-xl">⚓</span>
+                  <h1 className="font-bold text-sm md:text-base text-sky-400">
+                    Operación Marinero
+                  </h1>
+                </>
+              ) : isSlytherin ? (
                 <>
                   <span className="text-xl">🐍</span>
                   <h1 className="font-cinzel font-bold text-sm md:text-base text-emerald-400">
@@ -46,30 +60,61 @@ export default function Header() {
               )}
             </div>
 
-            {/* Navigation (Slytherin only) */}
-            {isSlytherin && (
-              <nav className="hidden md:flex items-center gap-6">
-                <a href="#hero" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                  Inicio
-                </a>
-                <a href="#horcruxes" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                  Horrocruxes
-                </a>
-                <a href="#rosco" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                  Rosco
-                </a>
-              </nav>
-            )}
+            {/* Navigation — always visible */}
+            <nav className="hidden md:flex items-center gap-5">
+              {/* Slytherin-specific nav */}
+              {isSlytherin && (
+                <>
+                  <a href="#hero" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
+                    Inicio
+                  </a>
+                  <a href="#horcruxes" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
+                    Horrocruxes
+                  </a>
+                  <a href="#rosco" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
+                    Rosco
+                  </a>
+                </>
+              )}
 
-            {/* Right side: Admin controls or login icon */}
+              <button
+                onClick={() => setShowColabs(true)}
+                className={`text-sm transition-colors flex items-center gap-1 ${
+                  isSlytherin || isMarinero
+                    ? 'text-yellow-400 hover:text-yellow-300'
+                    : 'text-amber-600 hover:text-amber-500'
+                }`}
+              >
+                <span>🤝</span>
+                <span>Colaboradores</span>
+              </button>
+            </nav>
+
+            {/* Right side: mobile Colabs icon + admin controls / login */}
             <div className="flex items-center gap-2">
+              {/* Mobile: Colabs icon */}
+              <div className="flex md:hidden items-center gap-1">
+                <button
+                  onClick={() => setShowColabs(true)}
+                  className={`p-1.5 rounded-lg text-sm transition-all ${
+                    isSlytherin || isMarinero
+                      ? 'text-yellow-400 hover:bg-yellow-900/20'
+                      : 'text-amber-600 hover:bg-amber-50'
+                  }`}
+                  title="Colaboradores"
+                >
+                  🤝
+                </button>
+              </div>
+
+              {/* Admin controls or login */}
               {isAdmin ? (
                 <>
                   <button
                     onClick={() => navigate('/admin')}
                     className={`
                       px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5
-                      ${isSlytherin
+                      ${isSlytherin || isMarinero
                         ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-700/30 hover:bg-emerald-800/50'
                         : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}
                     `}
@@ -84,7 +129,7 @@ export default function Header() {
                     onClick={() => { logout(); }}
                     className={`
                       p-1.5 rounded-lg text-xs transition-all
-                      ${isSlytherin
+                      ${isSlytherin || isMarinero
                         ? 'text-gray-500 hover:text-red-400 hover:bg-red-900/20'
                         : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}
                     `}
@@ -102,7 +147,7 @@ export default function Header() {
                   onClick={() => setShowLogin(true)}
                   className={`
                     p-2 rounded-lg text-sm font-medium transition-all
-                    ${isSlytherin
+                    ${isSlytherin || isMarinero
                       ? 'text-gray-400 hover:text-emerald-400 hover:bg-emerald-900/30'
                       : 'text-gray-500 hover:text-emerald-700 hover:bg-emerald-50'}
                   `}
@@ -120,6 +165,7 @@ export default function Header() {
       </header>
 
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showColabs && <ColaboradoresModal onClose={() => setShowColabs(false)} />}
     </>
   );
 }

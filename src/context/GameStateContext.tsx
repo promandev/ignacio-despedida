@@ -39,6 +39,8 @@ const INITIAL_STATE: GameState = {
     currentLetter: 'A',
     isPaused: true,
     isComplete: false,
+    timeRemaining: 70, // 1 min 10 sec base time
+    timeBonusFromHorcruxes: 0,
   },
 };
 
@@ -78,6 +80,8 @@ interface GameStateContextType {
   addBonusHint: () => void;
   resetRoscoLetter: (letter: string) => void;
   resetRosco: () => void;
+  setRoscoTimeRemaining: (seconds: number) => void;
+  addRoscoTimeBonus: (seconds: number) => void;
   incrementCounter: (key: CounterKey) => void;
   decrementCounter: (key: CounterKey) => void;
   setCounter: (key: CounterKey, value: number) => void;
@@ -107,6 +111,8 @@ const FALLBACK_CONTEXT: GameStateContextType = {
   addBonusHint: () => {},
   resetRoscoLetter: () => {},
   resetRosco: () => {},
+  setRoscoTimeRemaining: () => {},
+  addRoscoTimeBonus: () => {},
   incrementCounter: () => {},
   decrementCounter: () => {},
   setCounter: () => {},
@@ -271,6 +277,24 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [update]);
 
+  const setRoscoTimeRemaining = useCallback((seconds: number) => {
+    update((s) => ({
+      ...s,
+      rosco: { ...s.rosco, timeRemaining: Math.max(0, seconds) },
+    }));
+  }, [update]);
+
+  const addRoscoTimeBonus = useCallback((seconds: number) => {
+    update((s) => ({
+      ...s,
+      rosco: {
+        ...s.rosco,
+        timeRemaining: s.rosco.timeRemaining + seconds,
+        timeBonusFromHorcruxes: s.rosco.timeBonusFromHorcruxes + seconds,
+      },
+    }));
+  }, [update]);
+
   const setShowTransitionModal = useCallback((show: boolean) => {
     update((s) => ({ ...s, showTransitionModal: show }));
   }, [update]);
@@ -335,6 +359,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         addBonusHint,
         resetRoscoLetter,
         resetRosco,
+        setRoscoTimeRemaining,
+        addRoscoTimeBonus,
         incrementCounter,
         decrementCounter,
         setCounter,

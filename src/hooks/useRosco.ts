@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { roscoQuestions, ROSCO_LETTERS } from '../data/roscoQuestions';
 import { useGameState } from '../context/GameStateContext';
 import type { RoscoQuestion } from '../types';
@@ -28,10 +28,37 @@ export function useRosco() {
     useHintForLetter,
     toggleRoscoPause,
     setRoscoComplete,
+    setRoscoTimeRemaining,
   } = useGameState();
 
   const rosco = state.rosco;
   const [userInputs, setUserInputs] = useState<Record<string, string[]>>({});
+
+  // Countdown timer — ticks only when rosco is started (not paused) and not complete
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!rosco.isPaused && !rosco.isComplete && rosco.timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setRoscoTimeRemaining(rosco.timeRemaining - 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      // Time ran out
+      if (!rosco.isPaused && !rosco.isComplete && rosco.timeRemaining === 0) {
+        setRoscoComplete();
+      }
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [rosco.isPaused, rosco.isComplete, rosco.timeRemaining, setRoscoTimeRemaining, setRoscoComplete]);
 
   const currentQuestion: RoscoQuestion | undefined = useMemo(
     () => roscoQuestions.find((q) => q.letter === rosco.currentLetter),
@@ -174,5 +201,6 @@ export function useRosco() {
     stats,
     hintsRemaining,
     userInputs,
+    timeRemaining: rosco.timeRemaining,
   };
 }

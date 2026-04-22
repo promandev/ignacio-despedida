@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getDatabase, Database, ref, set, onValue, push, DataSnapshot } from 'firebase/database';
+import { getDatabase, Database, ref, set, onValue, push, remove, DataSnapshot } from 'firebase/database';
 import type { GameState, ChatMessage } from '../types';
 
 const firebaseConfig = {
@@ -142,6 +142,19 @@ export function sendChatMessage(msg: Omit<ChatMessage, 'id'>): void {
       msgs = [];
     }
     msgs.push({ ...msg, id: Date.now().toString() });
-    localStorage.setItem(KEY, JSON.stringify(msgs));
+    const newValue = JSON.stringify(msgs);
+    localStorage.setItem(KEY, newValue);
+    // StorageEvent only fires across tabs; dispatch manually so same-tab subscribers update too
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue }));
+  }
+}
+
+export function deleteChatMessages(): void {
+  if (db) {
+    remove(ref(db, 'chatMessages'));
+  } else {
+    const KEY = 'dosChatMessages';
+    localStorage.removeItem(KEY);
+    window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: null }));
   }
 }
