@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== THEME VARIABLES ===== */
+:root,
+[data-theme="carmena"] {
+  --color-primary: #00A959;
+  --color-primary-light: #33c278;
+  --color-secondary: #FFFFFF;
+  --color-accent: #004D2B;
+  --color-background: #F5F5F0;
+  --color-surface: #FFFFFF;
+  --color-on-primary: #FFFFFF;
+  --color-on-background: #1A1A1A;
+  --color-on-surface: #333333;
+}
+
+[data-theme="slytherin"] {
+  --color-primary: #1A472A;
+  --color-primary-light: #2A623D;
+  --color-secondary: #C0C0C0;
+  --color-accent: #2A623D;
+  --color-background: #0a0f0a;
+  --color-surface: #141e14;
+  --color-on-primary: #C0C0C0;
+  --color-on-background: #d4d4d4;
+  --color-on-surface: #b0b0b0;
+}
+
+/* ===== BASE STYLES ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  transition: background-color 1.5s ease, color 1.5s ease;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 3px;
+}
+
+/* ===== SHIMMER EFFECT ===== */
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-on-background) 0%,
+    #D4AF37 50%,
+    var(--color-on-background) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== HORCRUX BADGE ===== */
+.badge-locked {
+  filter: grayscale(100%) brightness(0.4);
+  opacity: 0.5;
+  transition: all 0.6s ease;
+}
+.badge-unlocked {
+  filter: grayscale(0%) brightness(1) drop-shadow(0 0 8px #D4AF37);
+  opacity: 1;
+  transition: all 0.6s ease;
+}
+
+/* ===== ROSCO ===== */
+.rosco-letter {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.rosco-letter:hover {
+  transform: scale(1.15);
+}
+
+/* ===== GLASS EFFECT ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ===== FLOATING PARTICLES (Slytherin) ===== */
+@keyframes particle-float {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+}
+
+.particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  animation: particle-float linear infinite;
+}
+
+/* ===== INPUT BOXES (Rosco) ===== */
+.letter-box {
+  width: 2rem;
+  height: 2.5rem;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.375rem;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  outline: none;
+  caret-color: var(--color-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.letter-box:focus {
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+.letter-box.revealed {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: #D4AF37;
+  color: #D4AF37;
+}
+.letter-box.correct {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+}
+.letter-box.wrong {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ===== RESPONSIVE HELPERS ===== */
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .text-shadow-lg {
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  }
+}
