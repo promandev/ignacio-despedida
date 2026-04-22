@@ -5,21 +5,22 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const imgDir = path.join(__dirname, 'public', 'images');
 
+// Each entry: [subdir, filename] relative to imgDir
 const filesToProcess = [
-  'horcrux-copa.png',
-  'horcrux-nagini.png',
-  'horcrux-anillo.png',
-  'horcrux-guardapelo.png',
-  'horcrux-diario.png',
-  'horcrux-diadema.png',
-  'horcrux-harry.png',
-  'carmena-ignacio.png',
-  'slytherin-ignacio.png',
+  ['horcruxes', 'copa.png'],
+  ['horcruxes', 'nagini.png'],
+  ['horcruxes', 'anillo.png'],
+  ['horcruxes', 'guardapelo.png'],
+  ['horcruxes', 'diario.png'],
+  ['horcruxes', 'diadema.png'],
+  ['horcruxes', 'harry.png'],
+  ['carmena', 'ignacio.png'],
+  ['slytherin', 'ignacio.png'],
 ];
 
-async function removeWhiteBg(filename) {
-  const filePath = path.join(imgDir, filename);
-  const outputPath = path.join(imgDir, filename);
+async function removeWhiteBg(subdir, filename) {
+  const filePath = path.join(imgDir, subdir, filename);
+  const outputPath = filePath;
   
   const image = sharp(filePath);
   const { width, height } = await image.metadata();
@@ -63,16 +64,16 @@ async function removeWhiteBg(filename) {
   const fs = await import('fs');
   fs.renameSync(outputPath + '.tmp', outputPath);
   
-  console.log(`✅ Processed: ${filename} (${info.width}x${info.height})`);
+  console.log(`✅ Processed: ${subdir}/${filename} (${info.width}x${info.height})`);
 }
 
 async function main() {
   console.log('🎨 Removing white backgrounds from images...\n');
-  for (const file of filesToProcess) {
+  for (const [subdir, file] of filesToProcess) {
     try {
-      await removeWhiteBg(file);
+      await removeWhiteBg(subdir, file);
     } catch (err) {
-      console.error(`❌ Error processing ${file}:`, err.message);
+      console.error(`❌ Error processing ${subdir}/${file}:`, err.message);
     }
   }
   console.log('\n✨ Done!');
