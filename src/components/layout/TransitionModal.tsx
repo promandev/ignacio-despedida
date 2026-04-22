@@ -5,15 +5,31 @@ import { useGameState } from '../../context/GameStateContext';
 // April 25, 2026, 9:00 AM Madrid time (CEST = UTC+2) => 7:00 UTC
 const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
 
-export default function TransitionModal() {
+interface Props {
+  /** When true, show the modal immediately (triggered from admin panel) */
+  forceShow?: boolean;
+  /** Called when user clicks OK in forceShow mode (instead of triggerTransition) */
+  onConfirm?: () => void;
+}
+
+export default function TransitionModal({ forceShow = false, onConfirm }: Props) {
   const { state, triggerTransition } = useGameState();
   const [showModal, setShowModal] = useState(false);
   const [transforming, setTransforming] = useState(false);
 
-  // Check time periodically
+  // Show when forced from admin
+  useEffect(() => {
+    if (forceShow) {
+      setShowModal(true);
+      setTransforming(false);
+    }
+  }, [forceShow]);
+
+  // Time-based check (only when not already triggered and modal enabled)
   useEffect(() => {
     if (state.transitionTriggered || state.currentTheme === 'slytherin') return;
     if (!state.showTransitionModal) return;
+    if (forceShow) return;
 
     const check = () => {
       if (Date.now() >= TARGET_UTC) {
@@ -21,16 +37,21 @@ export default function TransitionModal() {
       }
     };
     check();
-    const interval = setInterval(check, 30000); // check every 30s
+    const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
-  }, [state.transitionTriggered, state.currentTheme]);
+  }, [state.transitionTriggered, state.currentTheme, forceShow]);
 
   const handleOk = () => {
     setTransforming(true);
-    // Small delay before triggering the transition for visual effect
     setTimeout(() => {
       setShowModal(false);
-      triggerTransition();
+      if (forceShow && onConfirm) {
+        // Admin-triggered: start the ThemeTransition animation
+        onConfirm();
+      } else {
+        // Time-triggered: triggerTransition sets theme + flag
+        triggerTransition();
+      }
     }, 500);
   };
 
@@ -63,7 +84,7 @@ export default function TransitionModal() {
 
             {/* Glitch-style text */}
             <h2 className="text-xl md:text-2xl font-bold text-emerald-400 mb-4 font-cinzel">
-              Algo está pasando...
+              Oh, oh... Algo está pasando...
             </h2>
 
             <p className="text-gray-300 leading-relaxed mb-6 text-sm md:text-base">

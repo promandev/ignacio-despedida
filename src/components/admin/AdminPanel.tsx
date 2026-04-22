@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
-import { useGameState, INITIAL_STATE } from '../../context/GameStateContext';
+import { useGameState } from '../../context/GameStateContext';
 import { horcruxes } from '../../data/horcruxes';
 import { roscoQuestions, ROSCO_LETTERS } from '../../data/roscoQuestions';
-import type { GameState } from '../../types';
+import type { ThemeName, HorcruxId } from '../../types';
 import { useEffect, useState } from 'react';
 
 export default function AdminPanel() {
@@ -12,28 +12,30 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const {
     state,
-    batchUpdate,
+    setHorcrux,
+    resetRoscoLetter,
+    addBonusHint,
+    resetRosco,
+    setCounter,
+    setShowTransitionModal,
     isFirebase,
   } = useGameState();
 
-  // All changes are staged locally; applied when clicking "Volver a web"
-  const [localState, setLocalState] = useState<GameState>(() => state);
-
-  const patchLocal = (patch: Partial<GameState>) =>
-    setLocalState((prev) => ({ ...prev, ...patch }));
+  // Theme is a LOCAL admin preview — never saved to shared state.
+  // Game data (horcruxes, counters, rosco) uses direct context methods → immediate shared save.
+  const [previewTheme, setPreviewTheme] = useState<ThemeName>(state.currentTheme);
 
   const handleBack = () => {
-    // Determine if a transition animation should play
-    const shouldTransition =
-      localState.currentTheme === 'slytherin' && state.currentTheme === 'carmena';
-    batchUpdate({
-      ...localState,
-      transitionTriggered: shouldTransition || localState.transitionTriggered,
+    // Pass preview intent via navigation state; App.tsx handles the display
+    navigate('/', {
+      state: {
+        adminPreviewTheme: previewTheme,
+        adminPlayTransition: previewTheme === 'slytherin',
+      },
     });
-    navigate('/');
   };
 
-  const hasChanges = JSON.stringify(localState) !== JSON.stringify(state);
+  const themeChanged = previewTheme !== state.currentTheme;
 
   useEffect(() => {
     if (!isAdmin) navigate('/');
@@ -41,12 +43,12 @@ export default function AdminPanel() {
 
   if (!isAdmin) return null;
 
-  const completedHorcruxes = Object.values(localState.horcruxes).filter(Boolean).length;
+  const completedHorcruxes = Object.values(state.horcruxes).filter(Boolean).length;
   const roscoStats = {
-    correct: Object.values(localState.rosco.statuses).filter((v) => v === 'correct').length,
-    wrong: Object.values(localState.rosco.statuses).filter((v) => v === 'wrong').length,
-    pending: Object.values(localState.rosco.statuses).filter((v) => v === 'pending').length,
-    skipped: Object.values(localState.rosco.statuses).filter((v) => v === 'skipped').length,
+    correct: Object.values(state.rosco.statuses).filter((v) => v === 'correct').length,
+    wrong: Object.values(state.rosco.statuses).filter((v) => v === 'wrong').length,
+    pending: Object.values(state.rosco.statuses).filter((v) => v === 'pending').length,
+    skipped: Object.values(state.rosco.statuses).filter((v) => v === 'skipped').length,
   };
 
   return (
@@ -66,13 +68,13 @@ export default function AdminPanel() {
             <button
               onClick={handleBack}
               className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${
-                hasChanges
+                themeChanged
                   ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
                   : 'bg-gray-800 hover:bg-gray-700 text-gray-200'
               }`}
             >
-              {hasChanges && <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />}
-              ← Volver a web{hasChanges ? ' (guardar)' : ''}
+              {themeChanged && <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />}
+              ← Volver a web
             </button>
             <button
               onClick={() => { logout(); navigate('/'); }}
@@ -87,49 +89,43 @@ export default function AdminPanel() {
         <Section title="🎨 Control de Temática" subtitle="Cambia entre las dos temáticas de la web">
           <div className="flex flex-wrap gap-3">
             <ThemeButton
-              active={localState.currentTheme === 'carmena'}
-              onClick={() => patchLocal({ currentTheme: 'carmena', transitionTriggered: false })}
+              active={previewTheme === 'carmena'}
+              onClick={() => setPreviewTheme('carmena')}
               icon="🏛️"
               label="Manuela Carmena"
             />
             <ThemeButton
-              active={localState.currentTheme === 'slytherin'}
-              onClick={() => patchLocal({ currentTheme: 'slytherin' })}
+              active={previewTheme === 'slytherin'}
+              onClick={() => setPreviewTheme('slytherin')}
               icon="🐍"
               label="Slytherin"
             />
           </div>
-          {localState.currentTheme === 'carmena' && !localState.transitionTriggered && (
-            <button
-              onClick={() => patchLocal({ transitionTriggered: true, currentTheme: 'slytherin' })}
-              className="mt-4 px-4 py-2 text-sm bg-purple-900/50 text-purple-300 rounded-lg border border-purple-700/30 hover:bg-purple-900/70 transition-all"
-            >
-              ⚡ Forzar transición animada
-            </button>
-          )}
-          {/* Transition modal toggle */}
-          <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
-            <button
-              onClick={() => patchLocal({ showTransitionModal: !localState.showTransitionModal })}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                localState.showTransitionModal ? 'bg-emerald-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                  localState.showTransitionModal ? 'translate-x-6' : ''
+          {/* Modal toggle — only relevant when previewing Slytherin */}
+          {previewTheme === 'slytherin' && (
+            <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+              <button
+                onClick={() => setShowTransitionModal(!state.showTransitionModal)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  state.showTransitionModal ? 'bg-emerald-600' : 'bg-gray-600'
                 }`}
-              />
-            </button>
-            <div>
-              <p className="text-sm text-gray-300">Modal de transición</p>
-              <p className="text-xs text-gray-500">
-                {localState.showTransitionModal
-                  ? 'Se mostrará el modal al cambiar a Slytherin'
-                  : 'Cambio directo sin modal de transición'}
-              </p>
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    state.showTransitionModal ? 'translate-x-6' : ''
+                  }`}
+                />
+              </button>
+              <div>
+                <p className="text-sm text-gray-300">Modal + transición animada</p>
+                <p className="text-xs text-gray-500">
+                  {state.showTransitionModal
+                    ? 'Al volver: verás el modal épico y la transición'
+                    : 'Al volver: cambio directo de temática sin animación'}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </Section>
 
         {/* Counter management */}
@@ -148,7 +144,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => patchLocal({ counters: { ...localState.counters, [c.key]: Math.max(0, localState.counters[c.key] - 1) } })}
+                    onClick={() => setCounter(c.key, state.counters[c.key] - 1)}
                     className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 flex items-center justify-center text-sm"
                   >
                     −
@@ -156,12 +152,12 @@ export default function AdminPanel() {
                   <input
                     type="number"
                     min={0}
-                    value={localState.counters[c.key]}
-                    onChange={(e) => patchLocal({ counters: { ...localState.counters, [c.key]: parseInt(e.target.value) || 0 } })}
+                    value={state.counters[c.key]}
+                    onChange={(e) => setCounter(c.key, parseInt(e.target.value) || 0)}
                     className="w-14 text-center bg-gray-900 text-white rounded px-2 py-1 text-sm border border-gray-700"
                   />
                   <button
-                    onClick={() => patchLocal({ counters: { ...localState.counters, [c.key]: localState.counters[c.key] + 1 } })}
+                    onClick={() => setCounter(c.key, state.counters[c.key] + 1)}
                     className="w-7 h-7 rounded bg-emerald-800 hover:bg-emerald-700 text-emerald-300 flex items-center justify-center text-sm"
                   >
                     +
@@ -179,7 +175,7 @@ export default function AdminPanel() {
         >
           <div className="space-y-2">
             {horcruxes.map((h) => {
-              const completed = localState.horcruxes[h.id];
+              const completed = state.horcruxes[h.id];
               return (
                 <div
                   key={h.id}
@@ -188,7 +184,7 @@ export default function AdminPanel() {
                   }`}
                 >
                   <button
-                    onClick={() => patchLocal({ horcruxes: { ...localState.horcruxes, [h.id]: !completed } })}
+                    onClick={() => setHorcrux(h.id as HorcruxId, !completed)}
                     className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                       completed
                         ? 'bg-emerald-600 border-emerald-500 text-white'
@@ -223,17 +219,18 @@ export default function AdminPanel() {
         <Section
           title="🍩 Rosco de Harry Potter"
           subtitle={`Correctas: ${roscoStats.correct} | Fallos: ${roscoStats.wrong} | Pendientes: ${roscoStats.pending + roscoStats.skipped}`}
+
         >
           {/* Rosco controls */}
           <div className="flex flex-wrap gap-3 mb-4">
             <button
-              onClick={() => patchLocal({ rosco: { ...localState.rosco, bonusHints: localState.rosco.bonusHints + 1 } })}
+              onClick={addBonusHint}
               className="px-4 py-2 text-sm bg-blue-900/50 text-blue-300 rounded-lg border border-blue-700/30 hover:bg-blue-900/70 transition-all"
             >
-              💡 +1 Pista extra ({localState.rosco.maxHints + localState.rosco.bonusHints - localState.rosco.hintsUsed} disponibles)
+              💡 +1 Pista extra ({state.rosco.maxHints + state.rosco.bonusHints - state.rosco.hintsUsed} disponibles)
             </button>
             <button
-              onClick={() => patchLocal({ rosco: INITIAL_STATE.rosco })}
+              onClick={resetRosco}
               className="px-4 py-2 text-sm bg-red-900/50 text-red-300 rounded-lg border border-red-700/30 hover:bg-red-900/70 transition-all"
             >
               🔄 Resetear rosco
@@ -243,7 +240,7 @@ export default function AdminPanel() {
           {/* Letter grid */}
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
             {ROSCO_LETTERS.map((letter) => {
-              const status = localState.rosco.statuses[letter];
+              const status = state.rosco.statuses[letter];
               const question = roscoQuestions.find((q) => q.letter === letter);
               const statusColors = {
                 pending: 'bg-gray-800 border-gray-700',
@@ -272,13 +269,7 @@ export default function AdminPanel() {
                   </p>
                   {(status === 'wrong' || status === 'skipped') && (
                     <button
-                      onClick={() => patchLocal({
-                        rosco: {
-                          ...localState.rosco,
-                          statuses: { ...localState.rosco.statuses, [letter]: 'pending' },
-                          revealedHints: { ...localState.rosco.revealedHints, [letter]: [] },
-                        },
-                      })}
+                      onClick={() => resetRoscoLetter(letter)}
                       className="mt-1 text-[10px] text-blue-400 hover:text-blue-300"
                     >
                       Resetear
