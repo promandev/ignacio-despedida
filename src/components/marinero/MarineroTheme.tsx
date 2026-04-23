@@ -324,10 +324,10 @@ export default function MarineroTheme() {
                 <p className="text-gray-300 text-sm leading-relaxed">
                   De tanto cantar el himno y suspirar mirando al norte, Ignacio acabó
                   enamorándose de la ciudad. Tanto le gustó Bilbao que hizo lo que cualquier
-                  marinero de ley haría: nombrar a un barco en su honor.
+                  marinero de ley haría: nombrar a un barco en su honor, como tenía que ser, a lo grande.
                   Desde entonces, el <strong className="text-yellow-300">«Bilbao»</strong> surca
                   las aguas llevando el nombre de la villa que conquistó el corazón de este
-                  marinero reconvertido. Si lo ves pasar, ya sabes quién está detrás.
+                  marinero reconvertido. Y no era un barquito: era un carguero.
                 </p>
               </motion.div>
             </div>

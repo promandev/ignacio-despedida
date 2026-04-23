@@ -149,6 +149,7 @@ export default function CarmenaTheme() {
               <h3 className="text-lg font-bold text-gray-900 mb-2">Pasión por los trenes</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
                 Si no está redactando un recurso o debatiendo sobre Madrid Central, está soñando con trenes.
+                Le encantaría conducir alguno y ya está preparándose con simuladores de trenes.
                 Cree firmemente que el AVE es la respuesta a todos los problemas de movilidad del país
                 y que cualquier ciudad que se precie debería tener al menos una línea de cercanías con nombre propio.
                 <em className="text-emerald-600"> "¡Todos al andén número 1 del Madrid Central Express!"</em>

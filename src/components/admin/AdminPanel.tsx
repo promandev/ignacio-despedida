@@ -347,7 +347,7 @@ export default function AdminPanel() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowDosChat(!state.showDosChat)}
-              className={`relative w-14 h-7 rounded-full overflow-hidden transition-colors ${
+              className={`relative w-14 h-7 shrink-0 rounded-full overflow-hidden transition-colors ${
                 state.showDosChat ? 'bg-emerald-600' : 'bg-gray-600'
               }`}
             >
