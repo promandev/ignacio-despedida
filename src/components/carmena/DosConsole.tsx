@@ -76,6 +76,17 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevConnectedAtRef = useRef<number | null>(null);
 
+  const forceCaretToEnd = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const end = el.value.length;
+    try {
+      el.setSelectionRange(end, end);
+    } catch {
+      // Some mobile browsers may not allow selection updates for specific input types.
+    }
+  }, []);
+
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
     if (terminalRef.current) {
@@ -407,14 +418,19 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
                   } else {
                     setInput(e.target.value);
                   }
+                  requestAnimationFrame(forceCaretToEnd);
                 }}
                 className="dos-input"
-                style={{ width: `${input.length}ch` }}
+                size={Math.max(input.length, 1)}
                 autoFocus
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
+                dir="ltr"
+                inputMode={isPasswordStep && !isAdmin ? 'numeric' : 'text'}
+                enterKeyHint="send"
+                onFocus={() => requestAnimationFrame(forceCaretToEnd)}
               />
               <span className="dos-cursor">█</span>
             </form>

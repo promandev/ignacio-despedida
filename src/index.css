@@ -172,7 +172,10 @@ body {
 
 .dos-console {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100dvh;
   z-index: 9999;
   background: #000000;
   font-family: 'Courier New', 'Consolas', monospace;
@@ -217,7 +220,7 @@ body {
 .dos-terminal {
   position: absolute;
   inset: 0;
-  padding: 16px;
+  padding: 16px 16px calc(104px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 5;
@@ -312,6 +315,7 @@ body {
   align-items: center;
   flex: 1;
   min-width: 0;
+  direction: ltr;
 }
 
 .dos-input {
@@ -324,8 +328,16 @@ body {
   line-height: inherit;
   caret-color: transparent;
   min-width: 0;
+  width: auto;
   padding: 0;
+  direction: ltr;
   text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+@supports not (height: 100dvh) {
+  .dos-console {
+    height: 100vh;
+  }
 }
 
 .dos-input[type="password"] {
