@@ -251,6 +251,26 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
     setLines((prev) => [...prev, line]);
   }, []);
 
+  const completeLogin = useCallback((asAdmin: boolean, enteredSecret: string) => {
+    addLine({ text: `> ${asAdmin ? '*'.repeat(enteredSecret.length) : enteredSecret}`, type: 'input' });
+    setInput('');
+    onSessionRoleChange(asAdmin);
+    setAdminAuthSession(asAdmin);
+
+    const authUser2 = import.meta.env.VITE_AUTH_USER_2 || '';
+    if (!asAdmin) setUserPresence();
+
+    const displayName = asAdmin ? 'Usuario Desconocido' : authUser2;
+    setUsername(displayName);
+    addLine({ text: '', type: 'system' });
+    addLine({ text: '════════════════════════════════════════════', type: 'system' });
+    addLine({ text: `  Acceso concedido. Bienvenido, ${displayName}.`, type: 'system' });
+    addLine({ text: '  Escriba su mensaje y pulse ENTER para enviar.', type: 'system' });
+    addLine({ text: '════════════════════════════════════════════', type: 'system' });
+    addLine({ text: '', type: 'system' });
+    setAuthStep('authenticated');
+  }, [addLine, onSessionRoleChange]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -299,10 +319,6 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
       }
 
       if (authStep === 'password') {
-        // Mask password only when admin username was provided.
-        addLine({ text: `> ${isAdmin ? '*'.repeat(value.length) : value}`, type: 'input' });
-        setInput('');
-
         const authCred1 = import.meta.env.VITE_AUTH_CRED_1 || '';
         const authCred2 = import.meta.env.VITE_AUTH_CRED_2 || '';
 
@@ -311,19 +327,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         const isValidUser2 = !isAdmin && constantTimeCompare(value, authCred2);
 
         if (isValidAdmin || isValidUser2) {
-          onSessionRoleChange(isValidAdmin);
-          setAdminAuthSession(isValidAdmin);
-          if (isValidUser2) setUserPresence();
-          const authUser2 = import.meta.env.VITE_AUTH_USER_2 || '';
-          const displayName = isAdmin ? 'Usuario Desconocido' : authUser2;
-          setUsername(displayName);
-          addLine({ text: '', type: 'system' });
-          addLine({ text: '════════════════════════════════════════════', type: 'system' });
-          addLine({ text: `  Acceso concedido. Bienvenido, ${displayName}.`, type: 'system' });
-          addLine({ text: '  Escriba su mensaje y pulse ENTER para enviar.', type: 'system' });
-          addLine({ text: '════════════════════════════════════════════', type: 'system' });
-          addLine({ text: '', type: 'system' });
-          setAuthStep('authenticated');
+          completeLogin(isValidAdmin, value);
           return;
         }
 
@@ -346,7 +350,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         });
       }
     },
-    [input, authStep, isAdmin, username, addLine, onSessionRoleChange]
+    [input, authStep, isAdmin, username, addLine, completeLogin]
   );
 
   const handleImageUpload = useCallback(
@@ -433,16 +437,23 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
                 type={isPasswordStep && isAdmin ? 'password' : 'text'}
                 value={input}
                 onChange={(e) => {
+                  let nextValue = e.target.value;
                   if (isPasswordStep && !isAdmin) {
                     const isDeleting = e.target.value.length < input.length;
-                    setInput(formatDateInput(e.target.value, isDeleting));
-                  } else {
-                    setInput(e.target.value);
+                    nextValue = formatDateInput(e.target.value, isDeleting);
+
+                    const authCred2 = import.meta.env.VITE_AUTH_CRED_2 || '';
+                    if (authCred2 && constantTimeCompare(nextValue, authCred2)) {
+                      completeLogin(false, nextValue);
+                      requestAnimationFrame(forceCaretToEnd);
+                      return;
+                    }
                   }
+
+                  setInput(nextValue);
                   requestAnimationFrame(forceCaretToEnd);
                 }}
-                className="dos-input"
-                size={Math.max(input.length, 1)}
+                className="dos-input dos-input-native"
                 autoFocus
                 autoComplete="off"
                 autoCorrect="off"
@@ -453,6 +464,9 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
                 enterKeyHint="send"
                 onFocus={() => requestAnimationFrame(forceCaretToEnd)}
               />
+              <span className="dos-input-typed" aria-hidden="true">
+                {isPasswordStep && isAdmin ? '*'.repeat(input.length) : (input || '\u00A0')}
+              </span>
               <span className="dos-cursor">█</span>
             </form>
             {/* Photo button for all authenticated users */}

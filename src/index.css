@@ -314,6 +314,7 @@ body {
 
 .dos-form {
   display: flex;
+  position: relative;
   align-items: center;
   flex: 1;
   min-width: 0;
@@ -334,6 +335,21 @@ body {
   width: auto;
   padding: 0;
   direction: ltr;
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+}
+
+.dos-input-native {
+  position: absolute;
+  width: 1ch;
+  opacity: 0;
+}
+
+.dos-input-typed {
+  white-space: pre;
+  word-break: normal;
+  overflow: visible;
+  min-width: 1ch;
+  color: #33ff33;
   text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
 }
 
