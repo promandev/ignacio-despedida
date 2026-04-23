@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { subscribeToChatMessages, sendChatMessage } from '../../firebase/config';
+import { subscribeToChatMessages, sendChatMessage, subscribeToFirebaseError, subscribeToPresence, isFirebaseConfigured } from '../../firebase/config';
 import { setAdminAuthSession } from '../../hooks/useAuth';
 import type { ChatMessage } from '../../types';
 
@@ -74,6 +74,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevOnlineRef = useRef<boolean | null>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -150,13 +151,60 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
     return () => clearTimeout(watchdog);
   }, [authStep]);
 
+  // Subscribe to Ignacio's presence (admin only)
+  useEffect(() => {
+    if (!isAdmin || authStep !== 'authenticated') return;
+    const unsub = subscribeToPresence((presence) => {
+      const isOnline = presence?.online === true;
+      if (isOnline && prevOnlineRef.current === false) {
+        const authUser2 = import.meta.env.VITE_AUTH_USER_2 || 'Ignacio';
+        setLines((prev) => [
+          ...prev,
+          { text: '', type: 'system' },
+          { text: `*** ${authUser2} se ha conectado ***`, type: 'system' },
+          { text: '', type: 'system' },
+        ]);
+      }
+      prevOnlineRef.current = isOnline;
+    });
+    return unsub;
+  }, [isAdmin, authStep]);
+
   // Subscribe to chat messages when authenticated
   useEffect(() => {
     if (authStep !== 'authenticated') return;
+
+    if (!isFirebaseConfigured) {
+      setLines((prev) => [
+        ...prev,
+        { text: '', type: 'system' },
+        { text: '! AVISO: Firebase no configurado. Modo local activo.', type: 'error' },
+        { text: '! Los mensajes NO se comparten entre dispositivos.', type: 'error' },
+        { text: '', type: 'system' },
+      ]);
+    }
+
+    const unsubError = subscribeToFirebaseError((code) => {
+      if (code === 'PERMISSION_DENIED') {
+        setLines((prev) => [
+          ...prev,
+          { text: '', type: 'system' },
+          { text: '! ERROR FIREBASE: Acceso denegado (PERMISSION_DENIED).', type: 'error' },
+          { text: '! Revisa las reglas de seguridad de Firebase Realtime Database.', type: 'error' },
+          { text: '! Los mensajes NO se comparten entre dispositivos hasta que se corrija.', type: 'error' },
+          { text: '', type: 'system' },
+        ]);
+      }
+    });
+
     const unsub = subscribeToChatMessages((msgs) => {
       setChatMessages(msgs);
     });
-    return unsub;
+
+    return () => {
+      unsubError();
+      unsub();
+    };
   }, [authStep]);
 
   const addLine = useCallback((line: ConsoleLine) => {

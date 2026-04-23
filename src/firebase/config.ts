@@ -65,35 +65,58 @@ export function loadCachedState(): GameState | null {
 
 export { db, ref, set, onValue };
 
+// ===== Firebase error broadcasting =====
+type FirebaseErrorListener = (message: string) => void;
+const firebaseErrorListeners = new Set<FirebaseErrorListener>();
+
+export function subscribeToFirebaseError(
+  callback: FirebaseErrorListener
+): () => void {
+  firebaseErrorListeners.add(callback);
+  return () => firebaseErrorListeners.delete(callback);
+}
+
+function broadcastFirebaseError(error: Error & { code?: string }): void {
+  console.error('[Firebase] Error:', error.code ?? error.message);
+  firebaseErrorListeners.forEach((cb) => cb(error.code ?? error.message));
+}
+
 // ===== Chat functions =====
 export function subscribeToChatMessages(
   callback: (messages: ChatMessage[]) => void
 ): () => void {
   if (db) {
     const chatRef = ref(db, 'chatMessages');
-    const unsubscribe = onValue(chatRef, (snapshot: DataSnapshot) => {
-      const val = snapshot.val();
-      if (!val) {
+    const unsubscribe = onValue(
+      chatRef,
+      (snapshot: DataSnapshot) => {
+        const val = snapshot.val();
+        if (!val) {
+          callback([]);
+          return;
+        }
+        const msgs = Object.entries(val).reduce<ChatMessage[]>((acc, [key, v]) => {
+          if (!v || typeof v !== 'object') return acc;
+          const raw = v as Partial<ChatMessage>;
+          acc.push({
+            id: key,
+            username: typeof raw.username === 'string' && raw.username.trim() ? raw.username : 'Usuario',
+            text: typeof raw.text === 'string' ? raw.text : '',
+            image: typeof raw.image === 'string' ? raw.image : undefined,
+            timestamp: typeof raw.timestamp === 'number' && Number.isFinite(raw.timestamp)
+              ? raw.timestamp
+              : Date.now(),
+          });
+          return acc;
+        }, []);
+        msgs.sort((a, b) => a.timestamp - b.timestamp);
+        callback(msgs);
+      },
+      (error) => {
+        broadcastFirebaseError(error as Error & { code?: string });
         callback([]);
-        return;
       }
-      const msgs = Object.entries(val).reduce<ChatMessage[]>((acc, [key, v]) => {
-        if (!v || typeof v !== 'object') return acc;
-        const raw = v as Partial<ChatMessage>;
-        acc.push({
-          id: key,
-          username: typeof raw.username === 'string' && raw.username.trim() ? raw.username : 'Usuario',
-          text: typeof raw.text === 'string' ? raw.text : '',
-          image: typeof raw.image === 'string' ? raw.image : undefined,
-          timestamp: typeof raw.timestamp === 'number' && Number.isFinite(raw.timestamp)
-            ? raw.timestamp
-            : Date.now(),
-        });
-        return acc;
-      }, []);
-      msgs.sort((a, b) => a.timestamp - b.timestamp);
-      callback(msgs);
-    });
+    );
     return unsubscribe;
   }
   // localStorage fallback
@@ -130,7 +153,9 @@ export function subscribeToChatMessages(
 export function sendChatMessage(msg: Omit<ChatMessage, 'id'>): void {
   if (db) {
     const chatRef = ref(db, 'chatMessages');
-    push(chatRef, msg);
+    push(chatRef, msg).catch((error: Error & { code?: string }) => {
+      broadcastFirebaseError(error);
+    });
   } else {
     const KEY = 'dosChatMessages';
     const raw = localStorage.getItem(KEY);
