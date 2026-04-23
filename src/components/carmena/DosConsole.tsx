@@ -98,10 +98,29 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
     scrollToBottom();
   }, [lines, chatMessages, scrollToBottom]);
 
+  // Keep console height synced with the visible viewport to avoid white gaps on mobile keyboards.
+  useEffect(() => {
+    const setViewportHeight = () => {
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--dos-vh', `${Math.round(viewportHeight)}px`);
+    };
+
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.visualViewport?.addEventListener('resize', setViewportHeight);
+
+    return () => {
+      window.removeEventListener('resize', setViewportHeight);
+      window.visualViewport?.removeEventListener('resize', setViewportHeight);
+      document.documentElement.style.removeProperty('--dos-vh');
+    };
+  }, []);
+
   // Focus input on click anywhere
   const focusInput = useCallback(() => {
     inputRef.current?.focus();
-  }, []);
+    requestAnimationFrame(scrollToBottom);
+  }, [scrollToBottom]);
 
   // Boot sequence
   useEffect(() => {

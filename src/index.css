@@ -173,9 +173,11 @@ body {
 .dos-console {
   position: fixed;
   top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
-  height: 100dvh;
+  height: var(--dos-vh, 100dvh);
+  min-height: 100vh;
   z-index: 9999;
   background: #000000;
   font-family: 'Courier New', 'Consolas', monospace;
@@ -220,7 +222,7 @@ body {
 .dos-terminal {
   position: absolute;
   inset: 0;
-  padding: 16px 16px calc(104px + env(safe-area-inset-bottom));
+  padding: 16px 16px calc(132px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 5;
@@ -315,6 +317,7 @@ body {
   align-items: center;
   flex: 1;
   min-width: 0;
+  margin-left: 6px;
   direction: ltr;
 }
 
@@ -336,7 +339,7 @@ body {
 
 @supports not (height: 100dvh) {
   .dos-console {
-    height: 100vh;
+    height: var(--dos-vh, 100vh);
   }
 }
 
