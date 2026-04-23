@@ -81,6 +81,7 @@ interface GameStateContextType {
   toggleRoscoPause: () => void;
   setRoscoComplete: () => void;
   addBonusHint: () => void;
+  removeBonusHint: () => void;
   resetRoscoLetter: (letter: string) => void;
   resetRosco: () => void;
   setRoscoTimeRemaining: (seconds: number) => void;
@@ -114,6 +115,7 @@ const FALLBACK_CONTEXT: GameStateContextType = {
   toggleRoscoPause: () => {},
   setRoscoComplete: () => {},
   addBonusHint: () => {},
+  removeBonusHint: () => {},
   resetRoscoLetter: () => {},
   resetRosco: () => {},
   setRoscoTimeRemaining: () => {},
@@ -264,6 +266,13 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [update]);
 
+  const removeBonusHint = useCallback(() => {
+    update((s) => ({
+      ...s,
+      rosco: { ...s.rosco, bonusHints: Math.max(0, s.rosco.bonusHints - 1) },
+    }));
+  }, [update]);
+
   const resetRoscoLetter = useCallback((letter: string) => {
     update((s) => ({
       ...s,
@@ -372,6 +381,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         toggleRoscoPause,
         setRoscoComplete,
         addBonusHint,
+        removeBonusHint,
         resetRoscoLetter,
         resetRosco,
         setRoscoTimeRemaining,

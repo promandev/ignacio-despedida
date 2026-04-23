@@ -19,8 +19,10 @@ export default function AdminPanel() {
     setHorcrux,
     resetRoscoLetter,
     addBonusHint,
+    removeBonusHint,
     resetRosco,
     setCounter,
+    updateRoscoStatus,
     setShowTransitionModal,
     setShowMarineroModal,
     setForcedUserTheme,
@@ -263,6 +265,13 @@ export default function AdminPanel() {
               💡 +1 Pista extra ({state.rosco.maxHints + state.rosco.bonusHints - state.rosco.hintsUsed} disponibles)
             </button>
             <button
+              onClick={removeBonusHint}
+              disabled={state.rosco.bonusHints === 0}
+              className="px-4 py-2 text-sm bg-amber-900/50 text-amber-300 rounded-lg border border-amber-700/30 hover:bg-amber-900/70 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              💡 −1 Pista extra
+            </button>
+            <button
               onClick={resetRosco}
               className="px-4 py-2 text-sm bg-red-900/50 text-red-300 rounded-lg border border-red-700/30 hover:bg-red-900/70 transition-all"
             >
@@ -306,6 +315,21 @@ export default function AdminPanel() {
                       className="mt-1 text-[10px] text-blue-400 hover:text-blue-300"
                     >
                       Resetear
+                    </button>
+                  )}
+                  {status !== 'correct' ? (
+                    <button
+                      onClick={() => updateRoscoStatus(letter, 'correct')}
+                      className="mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 block w-full"
+                    >
+                      ✓ Marcar válida
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => updateRoscoStatus(letter, 'pending')}
+                      className="mt-1 text-[10px] text-amber-400 hover:text-amber-300 block w-full"
+                    >
+                      ✕ Desmarcar
                     </button>
                   )}
                 </div>
