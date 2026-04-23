@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { subscribeToChatMessages, sendChatMessage, subscribeToFirebaseError, subscribeToPresence, isFirebaseConfigured, missingFirebaseEnvKeys } from '../../firebase/config';
+import { subscribeToChatMessages, sendChatMessage, subscribeToFirebaseError, subscribeToPresence, setUserPresence, isFirebaseConfigured, missingFirebaseEnvKeys } from '../../firebase/config';
 import { setAdminAuthSession } from '../../hooks/useAuth';
 import type { ChatMessage } from '../../types';
 
@@ -74,7 +74,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const prevOnlineRef = useRef<boolean | null>(null);
+  const prevConnectedAtRef = useRef<number | null>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -155,17 +155,23 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
   useEffect(() => {
     if (!isAdmin || authStep !== 'authenticated') return;
     const unsub = subscribeToPresence((presence) => {
+      const connectedAt = presence?.connectedAt ?? null;
       const isOnline = presence?.online === true;
-      if (isOnline && prevOnlineRef.current === false) {
+      if (
+        isOnline &&
+        connectedAt !== null &&
+        prevConnectedAtRef.current !== null &&
+        connectedAt !== prevConnectedAtRef.current
+      ) {
         const authUser2 = import.meta.env.VITE_AUTH_USER_2 || 'Ignacio';
         setLines((prev) => [
           ...prev,
           { text: '', type: 'system' },
-          { text: `*** ${authUser2} se ha conectado ***`, type: 'system' },
+          { text: `*** ${authUser2} se ha conectado al chat ***`, type: 'system' },
           { text: '', type: 'system' },
         ]);
       }
-      prevOnlineRef.current = isOnline;
+      if (connectedAt !== null) prevConnectedAtRef.current = connectedAt;
     });
     return unsub;
   }, [isAdmin, authStep]);
@@ -275,6 +281,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         if (isValidAdmin || isValidUser2) {
           onSessionRoleChange(isValidAdmin);
           setAdminAuthSession(isValidAdmin);
+          if (isValidUser2) setUserPresence();
           const authUser2 = import.meta.env.VITE_AUTH_USER_2 || '';
           const displayName = isAdmin ? 'Usuario Desconocido' : authUser2;
           setUsername(displayName);
