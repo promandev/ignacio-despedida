@@ -90,7 +90,9 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
     if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      const { scrollHeight, clientHeight } = terminalRef.current;
+      const middleAnchor = scrollHeight - clientHeight * 0.55;
+      terminalRef.current.scrollTop = Math.max(0, middleAnchor);
     }
   }, []);
 
@@ -475,6 +477,8 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
             )}
           </div>
         )}
+
+        {authStep === 'authenticated' && <div className="dos-scroll-spacer" />}
       </div>
     </div>
   );
