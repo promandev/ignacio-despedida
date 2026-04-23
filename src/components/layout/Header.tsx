@@ -1,25 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameState } from '../../context/GameStateContext';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, useAdminPreviewTheme } from '../../hooks/useAuth';
 import LoginModal from './LoginModal';
 import ColaboradoresModal from './ColaboradoresModal';
 
 export default function Header() {
   const { state } = useGameState();
   const { isAdmin, logout } = useAuth();
+  const { previewTheme } = useAdminPreviewTheme();
   const navigate = useNavigate();
   const [showLogin, setShowLogin] = useState(false);
   const [showColabs, setShowColabs] = useState(false);
 
-  // Non-admin: use forcedUserTheme if set, otherwise time-based, otherwise currentTheme
+  // Non-admin: use forcedUserTheme if set, otherwise time-based
   const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
   const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
   const effectiveTheme = isAdmin
-    ? state.currentTheme
+    ? previewTheme
     : (
         state.forcedUserTheme ??
-        (Date.now() >= MARINERO_UTC ? 'marinero' : Date.now() >= TARGET_UTC ? 'slytherin' : state.currentTheme)
+        (Date.now() >= MARINERO_UTC ? 'marinero' : Date.now() >= TARGET_UTC ? 'slytherin' : 'carmena')
       );
   const isSlytherin = effectiveTheme === 'slytherin';
   const isMarinero = effectiveTheme === 'marinero';

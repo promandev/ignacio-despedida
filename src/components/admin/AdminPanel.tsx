@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, useAdminPreviewTheme } from '../../hooks/useAuth';
 import { useGameState } from '../../context/GameStateContext';
 import { horcruxes } from '../../data/horcruxes';
 import { roscoQuestions, ROSCO_LETTERS } from '../../data/roscoQuestions';
@@ -11,11 +11,11 @@ import { useEffect } from 'react';
 
 export default function AdminPanel() {
   const { isAdmin, logout } = useAuth();
+  const { previewTheme, setThemePreview } = useAdminPreviewTheme();
   const navigate = useNavigate();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const {
     state,
-    setTheme,
     setHorcrux,
     resetRoscoLetter,
     addBonusHint,
@@ -27,6 +27,13 @@ export default function AdminPanel() {
     setShowDosChat,
     isFirebase,
   } = useGameState();
+
+  // Compute the resolved theme that non-admin users currently see
+  const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
+  const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
+  const resolvedUserTheme: ThemeName = state.forcedUserTheme
+    ?? (Date.now() >= MARINERO_UTC ? 'marinero' : Date.now() >= TARGET_UTC ? 'slytherin' : 'carmena');
+  const userThemeLabel = resolvedUserTheme === 'carmena' ? 'Carmena' : resolvedUserTheme === 'slytherin' ? 'Slytherin' : 'Marinero';
 
   const handleBack = () => {
     navigate('/');
@@ -76,28 +83,34 @@ export default function AdminPanel() {
         </div>
 
         {/* Theme control */}
-        <Section title="🎨 Control de Temática (vista admin)" subtitle="Cambia la temática que ves tú como admin al volver a la web">
+        <Section title="🎨 Control de Temática (vista admin)" subtitle="Cambia la temática que ves tú como admin al volver a la web. No afecta a los usuarios.">
           <div className="flex flex-wrap gap-3">
             <ThemeButton
-              active={state.currentTheme === 'carmena'}
-              onClick={() => setTheme('carmena')}
+              active={previewTheme === 'carmena'}
+              onClick={() => setThemePreview('carmena')}
               icon="🏛️"
               label="Manuela Carmena"
             />
             <ThemeButton
-              active={state.currentTheme === 'slytherin'}
-              onClick={() => setTheme('slytherin')}
+              active={previewTheme === 'slytherin'}
+              onClick={() => setThemePreview('slytherin')}
               icon="🐍"
               label="Slytherin"
             />
             <ThemeButton
-              active={state.currentTheme === 'marinero'}
-              onClick={() => setTheme('marinero')}
+              active={previewTheme === 'marinero'}
+              onClick={() => setThemePreview('marinero')}
               icon="⚓"
               label="Marinero"
             />
+            <ThemeButton
+              active={previewTheme === resolvedUserTheme}
+              onClick={() => setThemePreview(resolvedUserTheme)}
+              icon="👁️"
+              label={`Vista usuario (${userThemeLabel})`}
+            />
           </div>          {/* Modal toggle — only relevant when previewing Slytherin */}
-          {state.currentTheme === 'slytherin' && (
+          {previewTheme === 'slytherin' && (
             <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
               <button
                 onClick={() => setShowTransitionModal(!state.showTransitionModal)}
@@ -122,7 +135,7 @@ export default function AdminPanel() {
             </div>
           )}
           {/* Marinero modal toggle — only relevant when previewing Marinero */}
-          {state.currentTheme === 'marinero' && (
+          {previewTheme === 'marinero' && (
             <div className="mt-4 flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
               <button
                 onClick={() => setShowMarineroModal(!state.showMarineroModal)}

@@ -126,6 +126,9 @@ export default function HorcruxTracker() {
   const { isAdmin } = useAuth();
   const { addRoscoTimeBonus } = useGameState();
   const completedCount = Object.values(state.horcruxes).filter(Boolean).length;
+  const [wonAtLeastOnce, setWonAtLeastOnce] = useState<Record<HorcruxId, boolean>>(
+    () => ({ ...state.horcruxes })
+  );
 
   const [gainedModal, setGainedModal] = useState<{ horcrux: Horcrux; seconds: number } | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -137,7 +140,6 @@ export default function HorcruxTracker() {
   const handleToggle = (h: Horcrux) => {
     const wasCompleted = state.horcruxes[h.id as HorcruxId];
 
-    // Non-admin cannot deselect
     if (wasCompleted && !isAdmin) return;
 
     toggleHorcrux(h.id as HorcruxId);
@@ -146,6 +148,7 @@ export default function HorcruxTracker() {
       // Gaining a horcrux: add 1 second and show modal
       addRoscoTimeBonus(HORCRUX_SECONDS);
       const newCount = completedCount + 1;
+      setWonAtLeastOnce((prev) => ({ ...prev, [h.id]: true }));
 
       setGainedModal({ horcrux: h, seconds: HORCRUX_SECONDS });
 
@@ -158,6 +161,11 @@ export default function HorcruxTracker() {
         }, 200);
       }
     }
+  };
+
+  const handleCardClick = (h: Horcrux) => {
+    if (isAdmin || !wonAtLeastOnce[h.id as HorcruxId]) return;
+    setGainedModal({ horcrux: h, seconds: HORCRUX_SECONDS });
   };
 
   const totalBonus = completedCount * HORCRUX_SECONDS + (completedCount === 7 ? COMPLETION_BONUS : 0);
@@ -236,9 +244,11 @@ export default function HorcruxTracker() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
+              onClick={() => handleCardClick(h)}
               className={`
                 glass rounded-xl p-4 md:p-5 transition-all
                 ${completed ? 'border-emerald-500/30 bg-emerald-900/10' : 'border-transparent'}
+                ${!isAdmin && wonAtLeastOnce[h.id as HorcruxId] ? 'cursor-pointer' : ''}
               `}
             >
               <div className="flex items-start gap-4">
@@ -277,7 +287,10 @@ export default function HorcruxTracker() {
 
                 {/* Checkbox */}
                 <button
-                  onClick={() => handleToggle(h)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleToggle(h);
+                  }}
                   disabled={!canToggle}
                   title={!canToggle ? 'Solo el admin puede desmarcar' : undefined}
                   className={`
@@ -298,16 +311,6 @@ export default function HorcruxTracker() {
                   </svg>
                 </button>
               </div>
-
-              {completed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-3 pt-3 border-t border-emerald-800/30 flex items-center gap-2"
-                >
-                  <span className="text-emerald-500 text-xs font-semibold">✅ Horrocrux recuperado · +{HORCRUX_SECONDS}s añadido al Rosco</span>
-                </motion.div>
-              )}
             </motion.div>
           );
         })}

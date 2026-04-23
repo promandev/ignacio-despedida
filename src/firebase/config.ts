@@ -158,3 +158,58 @@ export function deleteChatMessages(): void {
     window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: null }));
   }
 }
+
+// ===== Presence functions =====
+interface PresenceData {
+  online: boolean;
+  connectedAt?: number;
+}
+
+export function setUserPresence(): void {
+  const data: PresenceData = { online: true, connectedAt: Date.now() };
+  if (db) {
+    set(ref(db, 'presence'), data);
+  } else {
+    const val = JSON.stringify(data);
+    localStorage.setItem('userPresence', val);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'userPresence', newValue: val }));
+  }
+}
+
+export function clearUserPresence(): void {
+  const data: PresenceData = { online: false };
+  if (db) {
+    set(ref(db, 'presence'), data);
+  } else {
+    const val = JSON.stringify(data);
+    localStorage.setItem('userPresence', val);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'userPresence', newValue: val }));
+  }
+}
+
+export function subscribeToPresence(
+  callback: (presence: PresenceData | null) => void
+): () => void {
+  if (db) {
+    const presenceRef = ref(db, 'presence');
+    const unsubscribe = onValue(presenceRef, (snapshot: DataSnapshot) => {
+      callback(snapshot.val() as PresenceData | null);
+    });
+    return unsubscribe;
+  }
+  const KEY = 'userPresence';
+  const load = (): PresenceData | null => {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw) as PresenceData; } catch { return null; }
+  };
+  callback(load());
+  const handler = (e: StorageEvent) => {
+    if (e.key === KEY) {
+      if (!e.newValue) { callback(null); return; }
+      try { callback(JSON.parse(e.newValue) as PresenceData); } catch { callback(null); }
+    }
+  };
+  window.addEventListener('storage', handler);
+  return () => window.removeEventListener('storage', handler);
+}

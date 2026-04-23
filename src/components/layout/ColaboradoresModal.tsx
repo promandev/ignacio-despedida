@@ -1,15 +1,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
-const protagonista = { file: 'Ignacio', name: 'Ignacio' };
-
-const colaboradores = [
+const people = [
+  { file: 'Ignacio', name: 'Ignacio' },
   { file: 'Jefo', name: 'Jefo' },
+  { file: 'Koldo', name: 'Koldo' },
   { file: 'Mou', name: 'Mou' },
   { file: 'Pablo', name: 'Pablo' },
+  { file: 'Pin', name: 'Pin' },
   { file: 'Robert', name: 'Robert' },
   { file: 'Rou', name: 'Rou' },
   { file: 'Txo', name: 'Txo' },
 ];
+
+const protagonista = people[0];
+const colaboradores = people.slice(1);
 
 export default function ColaboradoresModal({ onClose }: { onClose: () => void }) {
   return (

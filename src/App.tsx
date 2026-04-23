@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { GameStateProvider, useGameState } from './context/GameStateContext';
 import type { ThemeName } from './types';
-import { useAuth } from './hooks/useAuth';
+import { useAuth, useAdminPreviewTheme } from './hooks/useAuth';
+import { setUserPresence, clearUserPresence, subscribeToPresence } from './firebase/config';
 import Header from './components/layout/Header';
 import TransitionModal from './components/layout/TransitionModal';
 import ThemeTransition from './components/layout/ThemeTransition';
@@ -23,7 +24,41 @@ const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
 function MainPage() {
   const { state, resetTransitionTriggered } = useGameState();
   const { isAdmin } = useAuth();
+  const { previewTheme: adminPreviewTheme } = useAdminPreviewTheme();
   const [dosSessionIsAdmin, setDosSessionIsAdmin] = useState(false);
+  const [showPresenceToast, setShowPresenceToast] = useState(false);
+  const prevOnlineRef = useRef<boolean | null>(null);
+
+  // Non-admin: register presence on mount, clear on unmount
+  useEffect(() => {
+    if (isAdmin) return;
+    setUserPresence();
+    const onUnload = () => clearUserPresence();
+    window.addEventListener('beforeunload', onUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onUnload);
+      clearUserPresence();
+    };
+  }, [isAdmin]);
+
+  // Admin: subscribe to presence and show toast when Ignacio connects
+  useEffect(() => {
+    if (!isAdmin) return;
+    const unsub = subscribeToPresence((presence) => {
+      const isOnline = presence?.online === true;
+      if (isOnline && prevOnlineRef.current === false) {
+        setShowPresenceToast(true);
+      }
+      prevOnlineRef.current = isOnline;
+    });
+    return unsub;
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!showPresenceToast) return;
+    const timer = setTimeout(() => setShowPresenceToast(false), 5000);
+    return () => clearTimeout(timer);
+  }, [showPresenceToast]);
 
   // Non-admin with forcedUserTheme set: skip all transition logic
   const isForcedTheme = !isAdmin && state.forcedUserTheme != null;
@@ -34,20 +69,21 @@ function MainPage() {
   const [awaitingMarineroModal, setAwaitingMarineroModal] = useState(false);
 
   const [displayTheme, setDisplayTheme] = useState<ThemeName>(() => {
-    // Admin previewing transition: start at previous theme if wanting to see the full transition
-    if (isAdmin && state.currentTheme === 'slytherin' && state.showTransitionModal) {
-      return 'carmena';
+    // Admin: use local preview theme (sessionStorage)
+    if (isAdmin) {
+      if (adminPreviewTheme === 'slytherin' && state.showTransitionModal) {
+        return 'carmena';
+      }
+      if (adminPreviewTheme === 'marinero' && state.showMarineroModal) {
+        return 'slytherin';
+      }
+      return adminPreviewTheme;
     }
-    if (isAdmin && state.currentTheme === 'marinero' && state.showMarineroModal) {
-      return 'slytherin';
-    }
-    // Admin normal: use current theme
-    if (isAdmin) return state.currentTheme;
     // Non-admin with forced theme: use it directly
     if (state.forcedUserTheme) return state.forcedUserTheme;
-    // Non-admin, auto mode: time-based (marinero > slytherin > carmena)
-    if (Date.now() >= MARINERO_UTC && state.currentTheme === 'marinero') return 'marinero';
-    if (Date.now() >= TARGET_UTC && state.currentTheme === 'slytherin') return 'slytherin';
+    // Non-admin, auto mode: purely time-based
+    if (Date.now() >= MARINERO_UTC) return 'marinero';
+    if (Date.now() >= TARGET_UTC) return 'slytherin';
     return 'carmena';
   });
 
@@ -63,16 +99,15 @@ function MainPage() {
     }
   }, [displayTheme]);
 
-  // Admin: sync displayTheme with currentTheme from shared state
-  // NOTE: Don't sync during transition preview
+  // Admin: sync displayTheme with local preview theme
   useEffect(() => {
     if (!isAdmin) return;
-    const isSlytherinPreview = state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena';
-    const isMarineroPreview = state.currentTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin';
+    const isSlytherinPreview = adminPreviewTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena';
+    const isMarineroPreview = adminPreviewTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin';
     if (!isSlytherinPreview && !isMarineroPreview) {
-      setDisplayTheme(state.currentTheme);
+      setDisplayTheme(adminPreviewTheme);
     }
-  }, [isAdmin, state.currentTheme, state.showTransitionModal, state.showMarineroModal, displayTheme]);
+  }, [isAdmin, adminPreviewTheme, state.showTransitionModal, state.showMarineroModal, displayTheme]);
 
   // Non-admin with forced theme: sync displayTheme when forcedUserTheme changes
   useEffect(() => {
@@ -85,9 +120,9 @@ function MainPage() {
   useEffect(() => {
     if (!isAdmin && state.forcedUserTheme == null) {
       if (Date.now() >= MARINERO_UTC) {
-        setDisplayTheme(state.currentTheme === 'marinero' ? 'marinero' : state.currentTheme === 'slytherin' ? 'slytherin' : 'carmena');
+        setDisplayTheme('marinero');
       } else if (Date.now() >= TARGET_UTC) {
-        setDisplayTheme(state.currentTheme === 'slytherin' ? 'slytherin' : 'carmena');
+        setDisplayTheme('slytherin');
       } else {
         setDisplayTheme('carmena');
       }
@@ -98,18 +133,18 @@ function MainPage() {
   // Admin preview transition (Carmena → Slytherin)
   useEffect(() => {
     if (!isAdmin) return;
-    if (state.currentTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
+    if (adminPreviewTheme === 'slytherin' && state.showTransitionModal && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
       setAwaitingModal(true);
     }
-  }, [isAdmin, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal]);
+  }, [isAdmin, adminPreviewTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal]);
 
   // Admin preview transition (Slytherin → Marinero)
   useEffect(() => {
     if (!isAdmin) return;
-    if (state.currentTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin' && !isMarineroTransitioning && !awaitingMarineroModal) {
+    if (adminPreviewTheme === 'marinero' && state.showMarineroModal && displayTheme === 'slytherin' && !isMarineroTransitioning && !awaitingMarineroModal) {
       setAwaitingMarineroModal(true);
     }
-  }, [isAdmin, state.currentTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal]);
+  }, [isAdmin, adminPreviewTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal]);
 
   // Non-admin time-based transition trigger (only when no forced theme)
   useEffect(() => {
@@ -165,6 +200,29 @@ function MainPage() {
 
   return (
     <>
+      {/* Admin presence toast */}
+      <AnimatePresence>
+        {showPresenceToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -60 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 bg-gray-900 border border-emerald-600/50 text-emerald-300 text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl"
+          >
+            <span className="text-lg">🟢</span>
+            <span>Ignacio se ha conectado en la sala</span>
+            <button
+              onClick={() => setShowPresenceToast(false)}
+              className="ml-2 text-emerald-500 hover:text-emerald-300 transition-colors"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header: always visible for admin, hidden when DOS chat active for non-admin */}
       {(!state.showDosChat || dosSessionIsAdmin) && <Header />}
 

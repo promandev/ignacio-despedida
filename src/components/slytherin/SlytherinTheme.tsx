@@ -175,7 +175,7 @@ export default function SlytherinTheme() {
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/30 to-black/40 z-10" />
                 <img
-                  src="/images/slytherin/ignacio.png"
+                  src="/images/slytherin/ignacio-draco.png"
                   alt="Draco Malfoy - Ignacio"
                   className="w-full h-auto relative"
                 />
