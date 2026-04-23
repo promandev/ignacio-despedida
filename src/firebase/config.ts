@@ -149,14 +149,21 @@ export function sendChatMessage(msg: Omit<ChatMessage, 'id'>): void {
   }
 }
 
-export function deleteChatMessages(): void {
-  if (db) {
-    remove(ref(db, 'chatMessages'));
-  } else {
-    const KEY = 'dosChatMessages';
-    localStorage.removeItem(KEY);
-    window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: null }));
-  }
+export async function deleteChatMessages(): Promise<void> {
+  const LOCAL_KEYS = ['dosChatMessages', 'chatMessages'];
+  const FIREBASE_PATHS = ['chatMessages', 'dosChatMessages'];
+
+  // Always clear local cache/legacy keys so current tab and fallback mode are clean.
+  LOCAL_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue: null }));
+  });
+
+  if (!db) return;
+  const database = db;
+
+  // Clear current and legacy Firebase paths to avoid stale history reappearing.
+  await Promise.all(FIREBASE_PATHS.map((path) => remove(ref(database, path))));
 }
 
 // ===== Presence functions =====
