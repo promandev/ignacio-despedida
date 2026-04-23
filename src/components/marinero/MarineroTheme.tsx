@@ -442,7 +442,7 @@ export default function MarineroTheme() {
           <span>Flota Especial · Ministerio de la Despedida</span>
         </div>
         <p className="text-gray-600 text-xs">
-          Despedida de soltero de Ignacio Aristegui · Misión Zaragoza · Abril 2026
+          Despedida de soltero de Ignacio Arístegui · Misión Zaragoza · Abril 2026
         </p>
       </footer>
     </motion.div>

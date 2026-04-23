@@ -25,6 +25,7 @@ export interface RoscoState {
   isComplete: boolean;
   timeRemaining: number; // seconds
   timeBonusFromHorcruxes: number; // seconds added by horcruxes
+  roscoInitialTime: number; // configurable starting time in seconds
 }
 
 export interface CountersState {

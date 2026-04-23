@@ -198,19 +198,71 @@ function RoscoResults({
   stats: { correct: number; wrong: number; skipped: number; total: number };
   timeRemaining: number;
 }) {
+  const { resetRosco } = useGameState();
   const percentage = Math.round((stats.correct / stats.total) * 100);
   const perfect = percentage === 100;
   const timedOut = timeRemaining === 0;
 
-  const message = perfect
-    ? '¡Lo has conseguido! Eres un verdadero mago 🧙‍♂️'
-    : timedOut
-    ? '¡Se acabó el tiempo! Pero lo intentaste con todo...'
-    : percentage >= 70
-    ? '¡Muy bien! Severus estaría orgulloso 🐍'
-    : percentage >= 50
-    ? 'No está mal, pero necesitas más práctica ⚡'
-    : 'Toca beber bastante... 🍺';
+  type ResultTier = 'perfect' | 'excellent' | 'good' | 'poor' | 'timeout';
+
+  const tier: ResultTier =
+    timedOut && !perfect
+      ? 'timeout'
+      : perfect
+      ? 'perfect'
+      : percentage >= 90
+      ? 'excellent'
+      : percentage >= 80
+      ? 'good'
+      : 'poor';
+
+  const TIER_CONFIG: Record<
+    ResultTier,
+    { emoji: string; title: string; subtitle: string; message: string; badgeColor: string }
+  > = {
+    perfect: {
+      emoji: '🏆',
+      title: '¡Rosco de Sangre Pura!',
+      subtitle: '✨ PERFECCIÓN ABSOLUTA ✨',
+      message:
+        'Extraordinario. Serías el orgullo de Salazar Slytherin en persona. Tu mente es tan afilada como la lengua de una Basilisco. Ningún Gryffindor jamás alcanzaría tus cotas. La Casa de la Serpiente te honra.',
+      badgeColor: 'text-yellow-400',
+    },
+    excellent: {
+      emoji: '🐍',
+      title: '¡Digno de las Mazmorras!',
+      subtitle: 'EXCELENTE — SLYTHERIN APRUEBA',
+      message:
+        'Impresionante, futuro Mortífago. Tu conocimiento del mundo mágico roza la maestría. Severus Snape te dedicaría una mirada de aprobación… aunque jamás lo admitiría en voz alta.',
+      badgeColor: 'text-emerald-400',
+    },
+    good: {
+      emoji: '⚗️',
+      title: 'Mejorable, pero hay potencial',
+      subtitle: 'ACEPTABLE — AÚN QUEDA TRABAJO',
+      message:
+        'No está mal para un sangre mezclada. Tienes potencial, pero te falta disciplina. Con más práctica en los calabozos de Hogwarts, quizás merezcas portar la insignia de la serpiente. Por ahora… a estudiar más.',
+      badgeColor: 'text-amber-400',
+    },
+    poor: {
+      emoji: '🍺',
+      title: '¡Fracaso digno de un Hufflepuff!',
+      subtitle: 'DEPLORABLE — BEBE, SANGRE SUCIA',
+      message:
+        'Lamentable. Incluso Neville Longbottom lo haría mejor. Tu actuación es una deshonra para las mazmorras. Draco Malfoy se reiría de ti durante semanas. Que el fuego Aguamenti llene tu copa, porque te lo has ganado a pulso.',
+      badgeColor: 'text-red-400',
+    },
+    timeout: {
+      emoji: '⌛',
+      title: '¡El tiempo ha hablado!',
+      subtitle: 'SE ACABÓ EL TIEMPO',
+      message:
+        'Los relojes de las mazmorras no mienten. Has corrido contra la Muerte y has perdido… por poco. El Patronus no pudo salvarte del Dementor del tiempo. Quizás la próxima vez, con más velocidad y sangre fría.',
+      badgeColor: 'text-gray-400',
+    },
+  };
+
+  const config = TIER_CONFIG[tier];
 
   const confettiPieces = useMemo(
     () =>
@@ -247,26 +299,32 @@ function RoscoResults({
           }
           transition={perfect ? { duration: 1, repeat: 2, delay: 0.3 } : {}}
         >
-          {perfect ? '🏆' : timedOut ? '⌛' : percentage >= 70 ? '🎉' : percentage >= 50 ? '🤔' : '🍻'}
+          {config.emoji}
         </motion.div>
 
-        {perfect && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-xs font-bold tracking-widest text-gold uppercase mb-1"
-          >
-            ✨ ¡Rosco Perfecto! ✨
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={`text-xs font-bold tracking-widest uppercase mb-1 ${config.badgeColor}`}
+        >
+          {config.subtitle}
+        </motion.div>
 
-        <h2 className="font-cinzel text-2xl md:text-3xl font-bold text-gold mb-2">
-          {timedOut && !perfect ? '¡Tiempo agotado!' : '¡Rosco completado!'}
+        <h2 className="font-cinzel text-2xl md:text-3xl font-bold text-gold mb-3">
+          {config.title}
         </h2>
-        <p className="text-gray-400 mb-6">{message}</p>
 
-        <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto mb-8">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-gray-300 text-sm md:text-base leading-relaxed max-w-md mx-auto mb-6 px-2"
+        >
+          {config.message}
+        </motion.p>
+
+        <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto mb-6">
           <div className="glass rounded-xl p-4">
             <div className="text-2xl font-bold text-emerald-400">{stats.correct}</div>
             <div className="text-xs text-gray-500">Correctas</div>
@@ -281,10 +339,19 @@ function RoscoResults({
           </div>
         </div>
 
-        <div className="glass rounded-xl p-4 max-w-xs mx-auto">
-          <div className="text-4xl font-bold text-gold font-cinzel">{percentage}%</div>
+        <div className="glass rounded-xl p-4 max-w-xs mx-auto mb-8">
+          <div className={`text-4xl font-bold font-cinzel ${config.badgeColor}`}>{percentage}%</div>
           <div className="text-xs text-gray-500 mt-1">Puntuación final</div>
         </div>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={resetRosco}
+          className="px-8 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-cinzel font-bold rounded-xl shadow-lg shadow-emerald-700/30 transition-all flex items-center gap-2 mx-auto"
+        >
+          🔄 Volver a las mazmorras — Jugar de nuevo
+        </motion.button>
       </motion.div>
     </div>
   );

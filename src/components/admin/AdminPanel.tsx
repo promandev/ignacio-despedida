@@ -27,6 +27,7 @@ export default function AdminPanel() {
     setShowMarineroModal,
     setForcedUserTheme,
     setShowDosChat,
+    setRoscoInitialTime,
     isFirebase,
   } = useGameState();
 
@@ -277,6 +278,40 @@ export default function AdminPanel() {
             >
               🔄 Resetear rosco
             </button>
+          </div>
+
+          {/* Timer configuration */}
+          <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg mb-4">
+            <span className="text-lg">⏱️</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-300">Tiempo inicial del rosco</p>
+              <p className="text-xs text-gray-500">Se aplicará en el próximo reseteo</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setRoscoInitialTime(state.rosco.roscoInitialTime - 10)}
+                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 flex items-center justify-center text-sm"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={10}
+                step={10}
+                value={state.rosco.roscoInitialTime}
+                onChange={(e) => setRoscoInitialTime(parseInt(e.target.value) || 130)}
+                className="w-16 text-center bg-gray-900 text-white rounded px-2 py-1 text-sm border border-gray-700"
+              />
+              <button
+                onClick={() => setRoscoInitialTime(state.rosco.roscoInitialTime + 10)}
+                className="w-7 h-7 rounded bg-emerald-800 hover:bg-emerald-700 text-emerald-300 flex items-center justify-center text-sm"
+              >
+                +
+              </button>
+              <span className="text-xs text-gray-500 w-12">
+                ({Math.floor(state.rosco.roscoInitialTime / 60)}m{state.rosco.roscoInitialTime % 60}s)
+              </span>
+            </div>
           </div>
 
           {/* Letter grid */}

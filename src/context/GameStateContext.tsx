@@ -40,8 +40,9 @@ const INITIAL_STATE: GameState = {
     currentLetter: 'A',
     isPaused: true,
     isComplete: false,
-    timeRemaining: 70, // 1 min 10 sec base time
+    timeRemaining: 130, // 2 min 10 sec base time
     timeBonusFromHorcruxes: 0,
+    roscoInitialTime: 130,
   },
 };
 
@@ -85,6 +86,7 @@ interface GameStateContextType {
   resetRoscoLetter: (letter: string) => void;
   resetRosco: () => void;
   setRoscoTimeRemaining: (seconds: number) => void;
+  setRoscoInitialTime: (seconds: number) => void;
   addRoscoTimeBonus: (seconds: number) => void;
   incrementCounter: (key: CounterKey) => void;
   decrementCounter: (key: CounterKey) => void;
@@ -119,6 +121,7 @@ const FALLBACK_CONTEXT: GameStateContextType = {
   resetRoscoLetter: () => {},
   resetRosco: () => {},
   setRoscoTimeRemaining: () => {},
+  setRoscoInitialTime: () => {},
   addRoscoTimeBonus: () => {},
   incrementCounter: () => {},
   decrementCounter: () => {},
@@ -287,7 +290,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   const resetRosco = useCallback(() => {
     update((s) => ({
       ...s,
-      rosco: INITIAL_STATE.rosco,
+      rosco: {
+        ...INITIAL_STATE.rosco,
+        roscoInitialTime: s.rosco.roscoInitialTime,
+        timeRemaining: s.rosco.roscoInitialTime,
+      },
     }));
   }, [update]);
 
@@ -295,6 +302,13 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     update((s) => ({
       ...s,
       rosco: { ...s.rosco, timeRemaining: Math.max(0, seconds) },
+    }));
+  }, [update]);
+
+  const setRoscoInitialTime = useCallback((seconds: number) => {
+    update((s) => ({
+      ...s,
+      rosco: { ...s.rosco, roscoInitialTime: Math.max(10, seconds) },
     }));
   }, [update]);
 
@@ -385,6 +399,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         resetRoscoLetter,
         resetRosco,
         setRoscoTimeRemaining,
+        setRoscoInitialTime,
         addRoscoTimeBonus,
         incrementCounter,
         decrementCounter,

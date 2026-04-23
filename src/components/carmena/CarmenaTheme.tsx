@@ -127,7 +127,7 @@ export default function CarmenaTheme() {
               El candidato
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">
-              Ignacio Aristegui
+              Ignacio Arístegui
             </h2>
             <p className="text-gray-500 mt-2 text-sm">La persona detrás de la alcaldesa</p>
             <div className="w-16 h-1 bg-emerald-500 mx-auto mt-4 rounded-full" />
@@ -341,7 +341,7 @@ export default function CarmenaTheme() {
           <span>Más Madrid</span>
         </div>
         <p className="text-gray-400 text-xs">
-          Web creada para la despedida de soltero de Ignacio Aristegui · Abril 2026
+          Web creada para la despedida de soltero de Ignacio Arístegui · Abril 2026
         </p>
       </footer>
     </motion.div>
