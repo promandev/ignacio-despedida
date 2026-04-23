@@ -12,11 +12,17 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey &&
-  firebaseConfig.databaseURL &&
-  firebaseConfig.projectId
-);
+const requiredFirebaseEnv: Record<string, string | undefined> = {
+  VITE_FIREBASE_API_KEY: firebaseConfig.apiKey,
+  VITE_FIREBASE_DATABASE_URL: firebaseConfig.databaseURL,
+  VITE_FIREBASE_PROJECT_ID: firebaseConfig.projectId,
+};
+
+export const missingFirebaseEnvKeys = Object.entries(requiredFirebaseEnv)
+  .filter(([, value]) => !(value && value.trim()))
+  .map(([key]) => key);
+
+export const isFirebaseConfigured = missingFirebaseEnvKeys.length === 0;
 
 let app: FirebaseApp | null = null;
 let db: Database | null = null;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { subscribeToChatMessages, sendChatMessage, subscribeToFirebaseError, subscribeToPresence, isFirebaseConfigured } from '../../firebase/config';
+import { subscribeToChatMessages, sendChatMessage, subscribeToFirebaseError, subscribeToPresence, isFirebaseConfigured, missingFirebaseEnvKeys } from '../../firebase/config';
 import { setAdminAuthSession } from '../../hooks/useAuth';
 import type { ChatMessage } from '../../types';
 
@@ -175,10 +175,12 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
     if (authStep !== 'authenticated') return;
 
     if (!isFirebaseConfigured) {
+      const missingKeys = missingFirebaseEnvKeys.join(', ');
       setLines((prev) => [
         ...prev,
         { text: '', type: 'system' },
         { text: '! AVISO: Firebase no configurado. Modo local activo.', type: 'error' },
+        { text: `! Variables faltantes: ${missingKeys || 'desconocidas'}`, type: 'error' },
         { text: '! Los mensajes NO se comparten entre dispositivos.', type: 'error' },
         { text: '', type: 'system' },
       ]);
