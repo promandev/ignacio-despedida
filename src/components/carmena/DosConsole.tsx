@@ -105,6 +105,8 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
     const setViewportHeight = () => {
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
       document.documentElement.style.setProperty('--dos-vh', `${Math.round(viewportHeight)}px`);
+      // Re-scroll so the input row stays visible above the keyboard.
+      requestAnimationFrame(scrollToBottom);
     };
 
     setViewportHeight();
@@ -116,7 +118,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
       window.visualViewport?.removeEventListener('resize', setViewportHeight);
       document.documentElement.style.removeProperty('--dos-vh');
     };
-  }, []);
+  }, [scrollToBottom]);
 
   // Focus input on click anywhere
   const focusInput = useCallback(() => {
@@ -493,6 +495,7 @@ export default function DosConsole({ onSessionRoleChange }: { onSessionRoleChang
         )}
 
         {authStep === 'authenticated' && <div className="dos-scroll-spacer" />}
+        {authStep !== 'authenticated' && authStep !== 'boot' && <div className="dos-auth-spacer" />}
       </div>
     </div>
   );

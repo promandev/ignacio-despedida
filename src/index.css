@@ -397,6 +397,10 @@ body {
   height: max(42vh, 170px);
 }
 
+.dos-auth-spacer {
+  height: max(35vh, 140px);
+}
+
 /* With header offset for admin */
 .dos-console-with-header .dos-console {
   top: 52px;
