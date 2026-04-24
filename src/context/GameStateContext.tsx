@@ -21,6 +21,7 @@ const INITIAL_STATE: GameState = {
     aguasConGas: 0,
     discursosMadridCentral: 0,
     frotaManos: 0,
+    croquetas: 0,
   },
   horcruxes: {
     diario: false,
@@ -63,7 +64,7 @@ function hydrateGameState(raw: Partial<GameState> | null | undefined): GameState
   };
 }
 
-type CounterKey = 'copas' | 'aguasConGas' | 'discursosMadridCentral' | 'frotaManos';
+type CounterKey = 'copas' | 'aguasConGas' | 'discursosMadridCentral' | 'frotaManos' | 'croquetas';
 
 interface GameStateContextType {
   state: GameState;

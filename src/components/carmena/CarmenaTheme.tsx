@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameState } from '../../context/GameStateContext';
 
@@ -37,10 +37,49 @@ const counterConfig = [
   { key: 'aguasConGas' as const, icon: '💧', label: 'Aguas con gas', color: 'bg-blue-500' },
   { key: 'discursosMadridCentral' as const, icon: '🚗', label: 'Discursos sobre Madrid Central', color: 'bg-emerald-500' },
   { key: 'frotaManos' as const, icon: '🤲', label: 'Veces frotándose las manos', color: 'bg-amber-500' },
+  { key: 'croquetas' as const, icon: '🍽️', label: 'Croquetas ventiladas', color: 'bg-orange-500' },
 ];
 
 export default function CarmenaTheme() {
   const { state, incrementCounter, decrementCounter } = useGameState();
+  const [counterToast, setCounterToast] = useState<string | null>(null);
+  const prevCountersRef = useRef(state.counters);
+
+  const totalCounterEvents =
+    state.counters.copas +
+    state.counters.aguasConGas +
+    state.counters.discursosMadridCentral +
+    state.counters.frotaManos +
+    state.counters.croquetas;
+  const hasCounterData = totalCounterEvents > 0;
+
+  useEffect(() => {
+    const prev = prevCountersRef.current;
+    const curr = state.counters;
+
+    const milestones: Array<{ key: keyof typeof curr; threshold: number; message: string }> = [
+      { key: 'copas', threshold: 5, message: '🍷 ¡Va lanzado! Nivel de brindis en ascenso.' },
+      { key: 'discursosMadridCentral', threshold: 3, message: '🚗 Nuevo discurso de Madrid Central detectado.' },
+      { key: 'frotaManos', threshold: 5, message: '🤲 Atención: frotamiento de manos en máximos.' },
+      { key: 'aguasConGas', threshold: 3, message: '💧 Hidratación premium activada.' },
+      { key: 'croquetas', threshold: 3, message: '🍽️ Croqueta en mano, programa electoral en marcha.' },
+    ];
+
+    for (const m of milestones) {
+      if (prev[m.key] <= m.threshold && curr[m.key] > m.threshold) {
+        setCounterToast(m.message);
+        break;
+      }
+    }
+
+    prevCountersRef.current = curr;
+  }, [state.counters]);
+
+  useEffect(() => {
+    if (!counterToast) return;
+    const timeout = window.setTimeout(() => setCounterToast(null), 2800);
+    return () => window.clearTimeout(timeout);
+  }, [counterToast]);
 
   return (
     <motion.div
@@ -80,7 +119,9 @@ export default function CarmenaTheme() {
             Antes de dar el gran paso, hay una historia que contar...
             una historia de <strong className="text-emerald-600">transformación</strong>,{' '}
             <strong className="text-emerald-600">ambición</strong> y{' '}
-            <strong className="text-emerald-600">cambio</strong>.
+            <strong className="text-emerald-600">cambio</strong>. Entre discursos improvisados,
+            argumentarios no solicitados y una seguridad en sí mismo que no cabe en una urna,
+            Ignacio llega al altar como si llegara a un pleno municipal.
           </p>
 
           <motion.div
@@ -130,7 +171,7 @@ export default function CarmenaTheme() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">
               Ignacio Arístegui
             </h2>
-            <p className="text-gray-500 mt-2 text-sm">La persona detrás de la alcaldesa</p>
+            <p className="text-gray-500 mt-2 text-sm">El novio que hoy viene en modo "alcaldesa, croqueta y cero remordimientos"</p>
             <div className="w-16 h-1 bg-emerald-500 mx-auto mt-4 rounded-full" />
           </motion.div>
 
@@ -141,6 +182,9 @@ export default function CarmenaTheme() {
               <p className="text-gray-600 text-sm leading-relaxed">
                 Como buen discípulo de Carmena, Ignacio siguió sus pasos en el mundo del derecho.
                 Dicen que en su despacho tiene una foto firmada de Manuela más grande que la de su futura mujer.
+                En cualquier sobremesa puede convertir una anécdota random en una defensa jurídica
+                de la gestión municipal, y si alguien aprieta demasiado el debate aparece su clásico:
+                <strong className="text-emerald-600"> "Con el PSOE no te metas"</strong>.
                 <em className="text-emerald-600"> "Objección, su señoría... a que la boda no sea en Madrid Central."</em>
               </p>
             </motion.div>
@@ -167,6 +211,25 @@ export default function CarmenaTheme() {
                 Le han pillado más de una vez frotándose las manos mientras explica los beneficios de las
                 zonas de bajas emisiones. Cuando se le pregunta por la boda, responde:{' '}
                 <strong className="text-emerald-600">"Será bonita, pero no tanto como el día que se inauguró Madrid Central."</strong>
+              </p>
+            </motion.div>
+
+            <motion.div {...fadeUp} className="bg-white rounded-2xl p-6 shadow-sm border border-emerald-100 md:col-span-2">
+              <div className="text-3xl mb-3">🎸</div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Sabina, barra y argumentario</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                Ignacio no escucha música: se monta una sesión temática. Arranca con Sabina,
+                sigue con análisis no solicitado y termina cantando con el brazo al hombro del más cercano.
+                Ahí es cuando aparece su brindis favorito:
+              </p>
+              <blockquote className="mt-3 border-l-4 border-emerald-300/80 pl-4 py-2 bg-emerald-50 rounded-r-lg">
+                <p className="text-emerald-700 italic text-sm leading-relaxed font-medium">
+                  "Que todas las noches sean noches de boda,<br />
+                  que todas las lunas sean lunas de miel."
+                </p>
+              </blockquote>
+              <p className="text-gray-500 text-xs mt-2">
+                Y en ese punto ya no hay marcha atrás: toca otro clin-clin y otro bis.
               </p>
             </motion.div>
           </div>
@@ -236,7 +299,7 @@ export default function CarmenaTheme() {
           </div>
 
           {/* Fun totals */}
-          {(state.counters.copas > 0 || state.counters.discursosMadridCentral > 0) && (
+          {hasCounterData && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -247,12 +310,30 @@ export default function CarmenaTheme() {
                 {state.counters.discursosMadridCentral > 3 && '🚗 ¡Otro discurso sobre Madrid Central! '}
                 {state.counters.frotaManos > 5 && '🤲 ¡Se va a desgastar las manos! '}
                 {state.counters.aguasConGas > 3 && '💧 Hidratación nivel experto. '}
-                {state.counters.copas + state.counters.aguasConGas + state.counters.discursosMadridCentral + state.counters.frotaManos === 0 && 'Aún no hay datos...'}
+                {state.counters.croquetas > 3 && '🍽️ Croqueta en mano, democracia en marcha. '}
+                {totalCounterEvents === 0 && 'Aún no hay datos...'}
               </p>
             </motion.div>
           )}
         </div>
       </section>
+
+      {/* Counter toast feedback */}
+      <AnimatePresence>
+        {counterToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-x-0 bottom-24 sm:bottom-8 z-[80] px-4 flex justify-center pointer-events-none"
+          >
+            <div className="w-full max-w-sm rounded-xl border border-emerald-300 bg-white/95 backdrop-blur px-4 py-3 text-sm text-gray-700 shadow-xl">
+              {counterToast}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* BIO CARMENA */}
       <section className="py-16 px-4 bg-emerald-50/30">

@@ -2,10 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameState } from '../../context/GameStateContext';
 import { useAuth, useAdminPreviewTheme } from '../../hooks/useAuth';
+import type { ThemeName } from '../../types';
 import LoginModal from './LoginModal';
 import ColaboradoresModal from './ColaboradoresModal';
 
-export default function Header() {
+export default function Header({
+  activeTheme,
+  showThemeSelector = false,
+  onSelectTheme,
+}: {
+  activeTheme?: ThemeName;
+  showThemeSelector?: boolean;
+  onSelectTheme?: (theme: ThemeName) => void;
+}) {
   const { state } = useGameState();
   const { isAdmin, logout } = useAuth();
   const { previewTheme } = useAdminPreviewTheme();
@@ -16,12 +25,12 @@ export default function Header() {
   // Non-admin: use forcedUserTheme if set, otherwise time-based
   const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
   const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
-  const effectiveTheme = isAdmin
+  const effectiveTheme: ThemeName = activeTheme ?? (isAdmin
     ? previewTheme
     : (
         state.forcedUserTheme ??
         (Date.now() >= MARINERO_UTC ? 'marinero' : Date.now() >= TARGET_UTC ? 'slytherin' : 'carmena')
-      );
+      ));
   const isSlytherin = effectiveTheme === 'slytherin';
   const isMarinero = effectiveTheme === 'marinero';
 
@@ -162,6 +171,38 @@ export default function Header() {
               )}
             </div>
           </div>
+
+          {showThemeSelector && onSelectTheme && (
+            <div className="max-w-6xl mx-auto px-4 pb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {([
+                  { theme: 'carmena' as const, icon: '🏛️', label: 'Manuela' },
+                  { theme: 'slytherin' as const, icon: '🐍', label: 'Slytherin' },
+                  { theme: 'marinero' as const, icon: '⚓', label: 'Marinero' },
+                ]).map((item) => {
+                  const isActive = effectiveTheme === item.theme;
+                  return (
+                    <button
+                      key={item.theme}
+                      onClick={() => onSelectTheme(item.theme)}
+                      className={`px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium border transition-all flex items-center gap-1.5 ${
+                        isActive
+                          ? (isSlytherin || isMarinero
+                              ? 'bg-emerald-900/40 border-emerald-500/70 text-emerald-300'
+                              : 'bg-emerald-100 border-emerald-300 text-emerald-700')
+                          : (isSlytherin || isMarinero
+                              ? 'bg-black/20 border-gray-700 text-gray-300 hover:border-emerald-600'
+                              : 'bg-white/70 border-emerald-200 text-gray-700 hover:border-emerald-400')
+                      }`}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

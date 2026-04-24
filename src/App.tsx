@@ -20,13 +20,16 @@ import AdminPanel from './components/admin/AdminPanel';
 const TARGET_UTC = new Date('2026-04-25T07:00:00Z').getTime();
 // April 26, 2026, 10:00 AM Madrid time (CEST = UTC+2) => 8:00 UTC
 const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
+// April 26, 2026, 8:00 PM Madrid time (CEST = UTC+2) => 18:00 UTC
+const HEADER_ALL_THEMES_UTC = new Date('2026-04-26T18:00:00Z').getTime();
 
 function MainPage() {
   const { state, resetTransitionTriggered } = useGameState();
   const { isAdmin } = useAuth();
-  const { previewTheme: adminPreviewTheme } = useAdminPreviewTheme();
+  const { previewTheme: adminPreviewTheme, setThemePreview } = useAdminPreviewTheme();
   const [dosSessionIsAdmin, setDosSessionIsAdmin] = useState(false);
   const [showPresenceToast, setShowPresenceToast] = useState(false);
+  const [publicThemeOverride, setPublicThemeOverride] = useState<ThemeName | null>(null);
   const prevOnlineRef = useRef<boolean | null>(null);
 
   // Non-admin: register presence on mount, clear on unmount
@@ -62,6 +65,7 @@ function MainPage() {
 
   // Non-admin with forcedUserTheme set: skip all transition logic
   const isForcedTheme = !isAdmin && state.forcedUserTheme != null;
+  const isPublicThemeOverridden = !isAdmin && publicThemeOverride != null;
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [awaitingModal, setAwaitingModal] = useState(false);
@@ -81,6 +85,7 @@ function MainPage() {
     }
     // Non-admin with forced theme: use it directly
     if (state.forcedUserTheme) return state.forcedUserTheme;
+    if (publicThemeOverride) return publicThemeOverride;
     // Non-admin, auto mode: purely time-based
     if (Date.now() >= MARINERO_UTC) return 'marinero';
     if (Date.now() >= TARGET_UTC) return 'slytherin';
@@ -116,9 +121,16 @@ function MainPage() {
     }
   }, [isAdmin, state.forcedUserTheme]);
 
+  // Non-admin local override from header: use selected theme directly
+  useEffect(() => {
+    if (!isAdmin && publicThemeOverride != null && state.forcedUserTheme == null) {
+      setDisplayTheme(publicThemeOverride);
+    }
+  }, [isAdmin, publicThemeOverride, state.forcedUserTheme]);
+
   // Non-admin cleared force: revert to time-based
   useEffect(() => {
-    if (!isAdmin && state.forcedUserTheme == null) {
+    if (!isAdmin && state.forcedUserTheme == null && publicThemeOverride == null) {
       if (Date.now() >= MARINERO_UTC) {
         setDisplayTheme('marinero');
       } else if (Date.now() >= TARGET_UTC) {
@@ -128,7 +140,7 @@ function MainPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin, state.forcedUserTheme]);
+  }, [isAdmin, state.forcedUserTheme, publicThemeOverride]);
 
   // Admin preview transition (Carmena → Slytherin)
   useEffect(() => {
@@ -148,7 +160,7 @@ function MainPage() {
 
   // Non-admin time-based transition trigger (only when no forced theme)
   useEffect(() => {
-    if (isAdmin || isForcedTheme) return;
+    if (isAdmin || isForcedTheme || isPublicThemeOverridden) return;
     if (state.transitionTriggered && state.currentTheme === 'slytherin' && displayTheme === 'carmena' && !isTransitioning && !awaitingModal) {
       if (state.showTransitionModal) {
         setAwaitingModal(true);
@@ -156,11 +168,11 @@ function MainPage() {
         setIsTransitioning(true);
       }
     }
-  }, [state.transitionTriggered, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme]);
+  }, [state.transitionTriggered, state.currentTheme, state.showTransitionModal, displayTheme, isTransitioning, awaitingModal, isAdmin, isForcedTheme, isPublicThemeOverridden]);
 
   // Non-admin marinero trigger: with modal/animation support
   useEffect(() => {
-    if (isAdmin || isForcedTheme) return;
+    if (isAdmin || isForcedTheme || isPublicThemeOverridden) return;
     if (state.transitionTriggered && state.currentTheme === 'marinero' && displayTheme === 'slytherin' && !isMarineroTransitioning && !awaitingMarineroModal) {
       if (state.showMarineroModal) {
         setAwaitingMarineroModal(true);
@@ -168,7 +180,18 @@ function MainPage() {
         setIsMarineroTransitioning(true);
       }
     }
-  }, [state.transitionTriggered, state.currentTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal, isAdmin, isForcedTheme]);
+  }, [state.transitionTriggered, state.currentTheme, state.showMarineroModal, displayTheme, isMarineroTransitioning, awaitingMarineroModal, isAdmin, isForcedTheme, isPublicThemeOverridden]);
+
+  const canShowAllThemesInHeader = Date.now() >= HEADER_ALL_THEMES_UTC;
+
+  const handleHeaderThemeSelect = useCallback((theme: ThemeName) => {
+    if (isAdmin) {
+      setThemePreview(theme);
+      return;
+    }
+    setPublicThemeOverride(theme);
+    setDisplayTheme(theme);
+  }, [isAdmin, setThemePreview]);
 
   const startTransition = useCallback(() => {
     setAwaitingModal(false);
@@ -224,7 +247,13 @@ function MainPage() {
       </AnimatePresence>
 
       {/* Header: always visible for admin, hidden when DOS chat active for non-admin */}
-      {(!state.showDosChat || dosSessionIsAdmin) && <Header />}
+      {(!state.showDosChat || dosSessionIsAdmin) && (
+        <Header
+          activeTheme={displayTheme}
+          showThemeSelector={canShowAllThemesInHeader}
+          onSelectTheme={handleHeaderThemeSelect}
+        />
+      )}
 
       {/* DOS Console overlay */}
       {state.showDosChat && (

@@ -33,6 +33,7 @@ export interface CountersState {
   aguasConGas: number;
   discursosMadridCentral: number;
   frotaManos: number;
+  croquetas: number;
 }
 
 export interface ChatMessage {

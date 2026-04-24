@@ -72,14 +72,41 @@ function ClinClinesChart() {
 
   return (
     <div ref={ref} className="w-full">
-      <div className="flex items-end justify-around gap-2 sm:gap-3 h-44 sm:h-52 mb-4">
+      <div className="sm:hidden mb-4 space-y-3">
         {clinClineData.map((d, i) => (
-          <div key={d.label} className="flex flex-col items-center flex-1 h-full justify-end gap-1 sm:gap-2 min-w-0">
+          <div key={d.label} className="rounded-lg bg-sky-900/30 border border-sky-700/30 p-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sky-100 text-xs font-medium">{d.label}</span>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={inView ? { opacity: 1 } : {}}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className="text-white font-bold text-sm"
+              >
+                {inView ? d.value : ''}
+              </motion.span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-sky-950/70 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={inView ? { width: `${(d.value / maxClinCline) * 100}%` } : {}}
+                transition={{ duration: 0.8, delay: 0.15 + i * 0.12 }}
+                style={{ backgroundColor: d.color }}
+                className="h-full rounded-full"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden sm:flex items-end justify-around gap-3 h-52 mb-4">
+        {clinClineData.map((d, i) => (
+          <div key={d.label} className="flex flex-col items-center flex-1 h-full justify-end gap-2 min-w-0">
             <motion.span
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ delay: 0.3 + i * 0.15 }}
-              className="text-white font-bold text-sm sm:text-lg"
+              className="text-white font-bold text-lg"
             >
               {inView ? d.value : ''}
             </motion.span>
@@ -95,7 +122,7 @@ function ClinClinesChart() {
                 style={{ backgroundColor: d.color, borderRadius: '8px 8px 0 0', width: '100%' }}
               />
             </div>
-            <span className="text-sky-200 text-[10px] sm:text-xs text-center leading-tight mt-1">{d.label}</span>
+            <span className="text-sky-200 text-xs text-center leading-tight mt-1">{d.label}</span>
           </div>
         ))}
       </div>
@@ -372,6 +399,12 @@ export default function MarineroTheme() {
                 juntos. Quedan los recuerdos, las fotos borrosas de las 4 de la mañana
                 y la certeza de que lo que pasa en la despedida... se cuenta en la boda.
               </p>
+              <blockquote className="mt-3 border-l-2 border-yellow-400/70 pl-4 py-2 bg-yellow-900/20 rounded-r-lg">
+                <p className="text-yellow-200 italic text-sm leading-relaxed font-medium">
+                  "...Y nos dieron las diez y las once<br />
+                  las doce y la una, y las dos y las tres..."
+                </p>
+              </blockquote>
             </motion.div>
 
             <motion.div

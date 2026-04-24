@@ -172,6 +172,7 @@ export default function AdminPanel() {
               { key: 'aguasConGas' as const, icon: '💧', label: 'Aguas con gas' },
               { key: 'discursosMadridCentral' as const, icon: '🚗', label: 'Discursos Madrid Central' },
               { key: 'frotaManos' as const, icon: '🤲', label: 'Veces frotando manos' },
+              { key: 'croquetas' as const, icon: '🍽️', label: 'Croquetas' },
             ]).map((c) => (
               <div key={c.key} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
                 <span className="text-xl">{c.icon}</span>
