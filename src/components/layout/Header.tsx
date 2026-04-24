@@ -72,21 +72,6 @@ export default function Header({
 
             {/* Navigation — always visible */}
             <nav className="hidden md:flex items-center gap-5">
-              {/* Slytherin-specific nav */}
-              {isSlytherin && (
-                <>
-                  <a href="#hero" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                    Inicio
-                  </a>
-                  <a href="#horcruxes" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                    Horrocruxes
-                  </a>
-                  <a href="#rosco" className="text-sm text-gray-400 hover:text-emerald-400 transition-colors">
-                    Rosco
-                  </a>
-                </>
-              )}
-
               <button
                 onClick={() => setShowColabs(true)}
                 className={`text-sm transition-colors flex items-center gap-1 ${
