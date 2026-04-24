@@ -24,7 +24,7 @@ const MARINERO_UTC = new Date('2026-04-26T08:00:00Z').getTime();
 const HEADER_ALL_THEMES_UTC = new Date('2026-04-26T18:00:00Z').getTime();
 
 function MainPage() {
-  const { state, resetTransitionTriggered } = useGameState();
+  const { state, resetTransitionTriggered, stateHydrated } = useGameState();
   const { isAdmin } = useAuth();
   const { previewTheme: adminPreviewTheme, setThemePreview } = useAdminPreviewTheme();
   const [dosSessionIsAdmin, setDosSessionIsAdmin] = useState(false);
@@ -220,6 +220,8 @@ function MainPage() {
       setDosSessionIsAdmin(false);
     }
   }, [state.showDosChat]);
+
+  if (!stateHydrated) return null;
 
   return (
     <>

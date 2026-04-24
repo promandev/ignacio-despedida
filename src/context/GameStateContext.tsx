@@ -97,6 +97,7 @@ interface GameStateContextType {
   setForcedUserTheme: (theme: ThemeName | null) => void;
   setShowDosChat: (show: boolean) => void;
   isFirebase: boolean;
+  stateHydrated: boolean;
 }
 
 const GameStateContext = createContext<GameStateContextType | null>(null);
@@ -132,6 +133,7 @@ const FALLBACK_CONTEXT: GameStateContextType = {
   setForcedUserTheme: () => {},
   setShowDosChat: () => {},
   isFirebase: isFirebaseConfigured,
+  stateHydrated: true,
 };
 
 export function GameStateProvider({ children }: { children: React.ReactNode }) {
@@ -139,6 +141,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     const cached = loadCachedState();
     return hydrateGameState(cached || null);
   });
+  const [stateHydrated, setStateHydrated] = useState(!isFirebaseConfigured);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -150,6 +153,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         if (firebaseState) {
           setState(hydrateGameState(firebaseState));
         }
+        setStateHydrated(true);
       });
       return unsub;
     } else {
@@ -410,6 +414,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         setForcedUserTheme,
         setShowDosChat,
         isFirebase: isFirebaseConfigured,
+        stateHydrated,
       }}
     >
       {children}
